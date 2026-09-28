@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI動画編集スタジオ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { corePlugins: { preflight: true }, theme: { extend: {
+    colors: { bay: { 900:'#15181E', 850:'#1A1E25', 800:'#20252D', 700:'#2A303A', 600:'#363D49' }, lamp: '#F2B544' },
+    fontFamily: { sans: ['"Zen Kaku Gothic New"', 'system-ui', 'sans-serif'], tc: ['"JetBrains Mono"', 'monospace'] }
+  } } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --top:56px; --tl:292px;
+  --bg:#15181E; --panel:#1A1E25; --raised:#20252D; --line:#2A303A; --line2:#363D49;
+  --ink:#E7E9EE; --dim:#9AA3B2; --mute:#6B7485;
+  --lamp:#F2B544; --lamp-ink:#241A05; --danger:#E5646E;
+  --v:#3FA7A0; --t:#9B8CFF; --a:#6CC38A;
+  --h-ruler:26px; --h-v:66px; --h-t:42px; --h-a:58px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+button:disabled{cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible,label.dropzone:focus-within{outline:2px solid var(--lamp);outline-offset:2px}
+svg.lucide{width:18px;height:18px;stroke-width:2;flex-shrink:0}
+.is-hidden{display:none!important}
+.tc{font-family:"JetBrains Mono",monospace;font-weight:500}
+.hint{font-size:12.5px;line-height:1.7;color:var(--dim)}
+
+/* ===== 全体レイアウト ===== */
+.app{display:grid;grid-template-rows:var(--top) minmax(0,1fr) var(--tl);height:100vh;height:100dvh}
+.topbar{display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:15px;white-space:nowrap}
+.brand-mark{position:relative;width:22px;height:16px;border:2px solid var(--ink);border-radius:3px;flex-shrink:0}
+.brand-mark::after{content:"";position:absolute;right:-6px;top:-6px;width:8px;height:8px;border-radius:50%;background:var(--lamp);box-shadow:0 0 8px rgba(242,181,68,.8)}
+.proj-name{background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 8px;color:var(--ink);width:200px;min-width:0}
+.proj-name:hover{border-color:var(--line2)}
+.proj-name:focus{background:var(--bg);border-color:var(--line2);outline:none}
+
+.aspect-bar{display:flex;align-items:center;gap:2px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.asp-btn{display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border-radius:7px;color:var(--dim);white-space:nowrap}
+.asp-btn:hover{color:var(--ink)}
+.asp-btn.active{color:var(--ink);background:var(--raised)}
+.asp-btn small{font-size:11px;color:var(--mute)}
+.asp-shape{display:inline-block;flex-shrink:0;width:calc(18px * var(--w) / max(var(--w), var(--h)));height:calc(18px * var(--h) / max(var(--w), var(--h)));border:1.5px solid currentColor;border-radius:2px}
+.asp-btn.active .asp-shape,.menu-item.active .asp-shape{border-color:var(--lamp)}
+
+.more-wrap{position:relative}
+.menu{position:absolute;top:calc(100% + 6px);left:0;min-width:220px;background:var(--raised);border:1px solid var(--line2);border-radius:10px;padding:6px;z-index:60;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.menu-right{left:auto;right:0}
+.menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:6px;text-align:left;color:var(--ink)}
+.menu-item:hover{background:var(--line)}
+.menu-item small{margin-left:auto;color:var(--mute);font-size:11.5px}
+.menu-item.active{background:var(--line)}
+.menu-email{padding:6px 10px 8px;font-size:12px;color:var(--mute);border-bottom:1px solid var(--line);margin-bottom:4px;word-break:break-all}
+
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:4px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:8px;color:var(--dim);white-space:nowrap}
+.btn-ghost:hover{background:var(--raised);color:var(--ink)}
+.btn-lamp{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 16px;border-radius:8px;background:var(--lamp);color:var(--lamp-ink);font-weight:700;white-space:nowrap;text-decoration:none}
+.btn-lamp:hover{filter:brightness(1.07)}
+.btn-lamp:disabled{opacity:.55;cursor:wait}
+.btn-wide{width:100%}
+.btn-small{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;border:1px solid var(--line2);font-size:12.5px;color:var(--ink)}
+.btn-small:hover{background:var(--line)}
+.btn-danger{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid rgba(229,100,110,.4);color:var(--danger);font-size:13px}
+.btn-danger:hover{background:rgba(229,100,110,.08)}
+.icon-btn{width:32px;height:32px;display:inline-grid;place-items:center;border-radius:8px;color:var(--dim)}
+.icon-btn:hover{background:var(--raised);color:var(--ink)}
+.icon-btn:disabled{opacity:.3;background:none}
+.user-btn span{max-width:160px;overflow:hidden;text-overflow:ellipsis}
+
+.workspace{display:grid;grid-template-columns:320px minmax(0,1fr) 284px;min-height:0}
+.pane{background:var(--panel);min-height:0;min-width:0;overflow:auto}
+
+/* ===== 左ペイン ===== */
+.left-pane{border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--line);flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 8px;font-size:11.5px;color:var(--mute);border-bottom:2px solid transparent}
+.tab:hover{color:var(--dim)}
+.tab.active{color:var(--ink);border-bottom-color:var(--lamp)}
+.tab-body{flex:1;overflow:auto;padding:14px}
+.dropzone{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 12px;border:1.5px dashed var(--line2);border-radius:12px;text-align:center;cursor:pointer;color:var(--dim)}
+.dropzone strong{color:var(--ink);font-size:14px}
+.dropzone span{font-size:12px}
+.dropzone:hover,.dropzone.over{border-color:var(--lamp);background:rgba(242,181,68,.05)}
+.chips{display:flex;gap:6px;margin:14px 0 10px}
+.chip{padding:4px 11px;border-radius:999px;font-size:12px;color:var(--dim);border:1px solid var(--line2)}
+.chip.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.media-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.media-card{background:var(--raised);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:grab}
+.media-card.static{cursor:default}
+.media-card:hover{border-color:var(--line2)}
+.media-thumb{position:relative;aspect-ratio:16/10;background:#0C0E12;display:grid;place-items:center;color:var(--a)}
+.media-thumb img{width:100%;height:100%;object-fit:cover}
+.media-thumb svg.lucide{width:28px;height:28px}
+.kind-bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+.kind-video .kind-bar,.kind-image .kind-bar{background:var(--v)}
+.kind-audio .kind-bar{background:var(--a)}
+.badge{position:absolute;right:5px;bottom:5px;font:500 10.5px "JetBrains Mono",monospace;background:rgba(0,0,0,.72);color:#fff;padding:1px 5px;border-radius:4px}
+.cloud-mark{position:absolute;left:8px;top:6px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+.cloud-mark svg.lucide{width:15px;height:15px}
+.media-name{padding:6px 8px 0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-actions{display:flex;justify-content:flex-end;align-items:center;gap:2px;padding:2px 4px 4px;min-height:32px}
+.media-actions button{width:28px;height:28px;display:grid;place-items:center;border-radius:6px;color:var(--dim)}
+.media-actions button:hover{background:var(--line);color:var(--ink)}
+.media-actions svg.lucide{width:15px;height:15px}
+.media-actions .loaded{font-size:11px;color:var(--mute);margin-right:auto;padding-left:4px}
+.empty{grid-column:1/-1;padding:26px 8px;text-align:center;color:var(--mute);font-size:13px;line-height:1.8}
+.empty svg.lucide{display:inline;vertical-align:-3px;width:15px;height:15px}
+.row-between{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field > span{font-size:12px;color:var(--dim)}
+.inp{width:100%;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;color:var(--ink);font:inherit}
+.inp:focus{border-color:var(--dim);outline:none}
+textarea.inp{resize:vertical;line-height:1.6}
+select.inp{padding:7px 8px}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:3px;gap:2px}
+.seg button{flex:1;padding:6px 2px;border-radius:6px;font-size:12px;color:var(--dim)}
+.seg button.active{background:var(--raised);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:12px;color:var(--ink);cursor:pointer}
+.check input{accent-color:var(--lamp);width:16px;height:16px}
+input[type=range]{width:100%;accent-color:var(--lamp)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.plan{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.plan h3{font-weight:900;font-size:16px;margin:0 0 4px}
+.plan ol{list-style:none;padding:0;margin:10px 0 0;counter-reset:sc}
+.plan li{display:grid;grid-template-columns:22px 1fr auto;gap:6px 8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;counter-increment:sc}
+.plan li::before{content:counter(sc);font:500 11px "JetBrains Mono",monospace;color:var(--mute);padding-top:2px}
+.plan .cap{color:var(--ink)}
+.plan .src{display:block;color:var(--mute);font-size:11px;margin-top:2px}
+.plan .sec{font:500 11px "JetBrains Mono",monospace;color:var(--dim)}
+.ai-wait{display:flex;gap:10px;align-items:center;margin-top:16px;padding:12px;border-radius:10px;background:var(--raised);font-size:13px;color:var(--dim)}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.text-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.text-item{display:flex;gap:10px;align-items:baseline;text-align:left;padding:9px 10px;border-radius:8px;background:var(--raised);border:1px solid var(--line);font-size:13px}
+.text-item .tc{font-size:11px;color:var(--t);flex-shrink:0}
+.text-item.active{border-color:var(--lamp)}
+
+/* ===== プレビュー ===== */
+.stage-pane{background:#0E1014;display:flex;overflow:hidden}
+.stage{position:relative;flex:1;display:grid;place-items:center;min-height:0;min-width:0;overflow:hidden}
+#preview{display:block;background:#000;box-shadow:0 0 0 1px var(--line2),0 24px 60px rgba(0,0,0,.55)}
+.stage-tag{position:absolute;left:12px;top:10px;font:500 11px "JetBrains Mono",monospace;color:var(--mute);white-space:pre}
+
+/* ===== 情報ペイン ===== */
+.info-pane{border-left:1px solid var(--line);padding:14px 16px 24px}
+.pane-title{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 10px}
+.thumb-box{aspect-ratio:16/9;background:#0C0E12;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;color:var(--mute);font-size:12px;overflow:hidden}
+.thumb-box img{width:100%;height:100%;object-fit:contain}
+.info-list{display:grid;grid-template-columns:auto 1fr;gap:9px 12px;font-size:13px;margin:14px 0 24px}
+.info-list dt{color:var(--mute)}
+.info-list dd{margin:0;text-align:right;display:flex;justify-content:flex-end;align-items:center;gap:6px;flex-wrap:wrap}
+.sel{background:var(--bg);border:1px solid var(--line2);border-radius:6px;padding:2px 6px;color:var(--ink);font:inherit;font-size:12.5px}
+.insp-empty{font-size:13px;line-height:1.8;color:var(--mute)}
+.insp-name{font-size:12.5px;color:var(--dim);margin:0 0 12px;word-break:break-all}
+
+/* ===== タイムライン ===== */
+.timeline-pane{background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.tl-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tl-group{display:flex;align-items:center;gap:4px}
+.play-btn{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;margin:0 4px}
+.play-btn:hover{background:#fff}
+.timecode{font:500 13px "JetBrains Mono",monospace;margin-left:10px}
+.timecode .tot{color:var(--mute)}
+.timecode .sep{color:var(--mute);margin:0 6px}
+.zoom{color:var(--mute)}
+.zoom input{width:120px;accent-color:var(--dim)}
+.tl-body{flex:1;display:flex;min-height:0}
+.tl-heads{width:112px;flex-shrink:0;border-right:1px solid var(--line)}
+.tl-head-ruler{height:var(--h-ruler);border-bottom:1px solid var(--line)}
+.tl-head{display:flex;align-items:center;gap:8px;padding:0 12px;font-size:12px;color:var(--dim);border-bottom:1px solid var(--line)}
+.tl-head.hv{height:var(--h-v)} .tl-head.ht{height:var(--h-t)} .tl-head.ha{height:var(--h-a)}
+.dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.dot.v{background:var(--v)} .dot.t{background:var(--t)} .dot.a{background:var(--a)}
+.tl-scroll{flex:1;overflow-x:auto;overflow-y:hidden;min-width:0}
+.tl-inner{position:relative;min-width:100%;user-select:none;-webkit-user-select:none;touch-action:pan-x}
+.ruler{position:relative;height:var(--h-ruler);border-bottom:1px solid var(--line);cursor:pointer;touch-action:none}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line2)}
+.tick span{position:absolute;left:4px;top:6px;font:500 10px "JetBrains Mono",monospace;color:var(--mute);white-space:nowrap}
+.tick.minor{top:auto;height:6px}
+.lane{position:relative;border-bottom:1px solid var(--line)}
+.lane-video{height:var(--h-v)} .lane-text{height:var(--h-t)} .lane-audio{height:var(--h-a)}
+.lane.drop{background:rgba(242,181,68,.06)}
+.clip{position:absolute;top:5px;bottom:5px;border-radius:6px;overflow:hidden;cursor:grab;border:1px solid rgba(255,255,255,.08);touch-action:none}
+.clip-video{background:#1D3736;border-color:rgba(63,167,160,.6)}
+.clip-text{background:#2B2650;border-color:rgba(155,140,255,.6)}
+.clip-audio{background:#1B3124;border-color:rgba(108,195,138,.55)}
+.clip.missing{background:repeating-linear-gradient(45deg,#3A2226 0 6px,#2A1A1D 6px 12px);border-color:var(--danger)}
+.clip.selected{outline:2px solid var(--lamp);outline-offset:0;z-index:3}
+.clip.dragging{opacity:.85;z-index:6;cursor:grabbing;box-shadow:0 10px 24px rgba(0,0,0,.55)}
+.clip .thumbs{position:absolute;inset:0;background-repeat:repeat-x;background-size:auto 100%;opacity:.5;pointer-events:none}
+.clip-label{position:absolute;left:9px;right:9px;top:4px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.9);pointer-events:none}
+.clip-text .clip-label{top:50%;transform:translateY(-50%);font-size:12px}
+.clip-dur{position:absolute;left:9px;bottom:3px;font:500 10px "JetBrains Mono",monospace;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.9);pointer-events:none}
+.clip-fx{position:absolute;right:10px;bottom:3px;font-size:10px;color:rgba(255,255,255,.8);pointer-events:none}
+.clip-audio canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.h{position:absolute;top:0;bottom:0;width:9px;z-index:2;cursor:ew-resize}
+.h-l{left:0} .h-r{right:0}
+.clip:hover .h,.clip.selected .h{background:rgba(242,181,68,.55)}
+.playhead{position:absolute;top:0;bottom:0;left:0;width:0;border-left:2px solid var(--lamp);pointer-events:none;z-index:10;will-change:transform}
+.playhead::before{content:"";position:absolute;top:0;left:-7px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--lamp)}
+
+/* ===== モーダル類 ===== */
+.modal-back{position:fixed;inset:0;background:rgba(8,10,13,.74);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:100;padding:16px}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:14px;width:min(440px,100%);max-height:92vh;overflow:auto;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.modal.wide{width:min(820px,100%)}
+.modal h2{font-size:21px;font-weight:900;margin:0 0 8px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
+.auth-brand{display:flex;align-items:center;gap:10px;font-weight:900;margin-bottom:22px;color:var(--dim)}
+.auth-view label.lbl{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--dim);margin-bottom:14px}
+.pw-wrap{position:relative}
+.pw-wrap .inp{padding-right:44px}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:36px;height:34px;display:grid;place-items:center;border-radius:6px;color:var(--dim)}
+.eye:hover{color:var(--ink);background:var(--line)}
+.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:16px;font-size:12.5px;flex-wrap:wrap}
+.auth-links button{color:var(--dim);text-decoration:underline;text-underline-offset:3px}
+.auth-links button:hover{color:var(--ink)}
+.auth-error{margin-top:14px;padding:10px 12px;border-radius:8px;background:rgba(229,100,110,.1);color:#F3A0A7;font-size:13px;line-height:1.6}
+.auth-result{margin-top:14px;padding:14px;border-radius:10px;background:var(--raised);font-size:13px;line-height:1.7}
+.tp{font:500 20px "JetBrains Mono",monospace;letter-spacing:.06em;color:var(--lamp);user-select:all}
+.rule{font-size:12px;color:var(--mute);margin:-4px 0 16px}
+.proj-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:14px}
+.proj-card{background:var(--raised);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.proj-thumb{aspect-ratio:16/9;background:#0C0E12}
+.proj-thumb img{width:100%;height:100%;object-fit:contain}
+.proj-body{padding:10px 12px}
+.proj-body strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-body .meta{display:block;font-size:11.5px;color:var(--mute);margin-top:3px}
+.proj-actions{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:18px 0 10px}
+.bar i{display:block;height:100%;width:0;background:var(--lamp)}
+#expVideo{width:100%;max-height:48vh;background:#000;border-radius:8px;margin:10px 0}
+.busy{position:fixed;inset:0;z-index:200;background:rgba(8,10,13,.55);display:grid;place-items:center}
+.busy-box{background:var(--raised);border:1px solid var(--line2);padding:16px 22px;border-radius:12px;display:flex;gap:12px;align-items:center;font-size:14px}
+#toasts{position:fixed;right:16px;top:68px;z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--raised);border:1px solid var(--line2);border-left:3px solid var(--dim);padding:10px 14px;border-radius:8px;max-width:380px;font-size:13px;line-height:1.6;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.toast.error{border-left-color:var(--danger)}
+.toast.ok{border-left-color:var(--a)}
+#mediaPool{position:fixed;left:-9999px;top:0;width:4px;height:4px;overflow:hidden;opacity:0;pointer-events:none}
+
+/* ===== レスポンシブ ===== */
+@media (max-width:1240px){
+  .workspace{grid-template-columns:288px minmax(0,1fr) 250px}
+  .asp-btn small,.top-actions .btn-ghost span{display:none}
+  .proj-name{width:150px}
+}
+@media (max-width:900px){
+  .app{display:block;height:auto}
+  .topbar{flex-wrap:wrap;height:auto;padding:8px;gap:8px}
+  .proj-name{order:5;width:100%}
+  .brand-name{display:none}
+  .user-btn span{display:none}
+  .workspace{display:flex;flex-direction:column}
+  .stage-pane{order:-1;height:42vh;min-height:240px}
+  .left-pane{overflow:visible}
+  .tab-body{max-height:none}
+  .info-pane{border-left:0;border-top:1px solid var(--line)}
+  .timeline-pane{position:sticky;bottom:0;height:290px;z-index:20}
+  .zoom input{width:80px}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- ===== ヘッダー ===== -->
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">AI動画編集スタジオ</span></div>
+    <input id="projName" class="proj-name" value="無題のプロジェクト" aria-label="プロジェクト名" maxlength="60">
+    <div class="aspect-bar" role="group" aria-label="画面比率">
+      <button class="asp-btn" data-aspect="16:9" title="横型（YouTube）"><span class="asp-shape" style="--w:16;--h:9"></span><span>16:9</span><small>YouTube</small></button>
+      <button class="asp-btn" data-aspect="9:16" title="縦型（ショート・TikTok・Reels）"><span class="asp-shape" style="--w:9;--h:16"></span><span>9:16</span><small>ショート</small></button>
+      <div class="more-wrap">
+        <button id="moreAspBtn" class="asp-btn" aria-haspopup="true" aria-expanded="false"><span id="moreAspLabel">もっと…</span><i data-lucide="chevron-down"></i></button>
+        <div id="moreAspMenu" class="menu is-hidden" role="menu">
+          <button class="menu-item" data-aspect="1:1"><span class="asp-shape" style="--w:1;--h:1"></span>1:1<small>Instagram</small></button>
+          <button class="menu-item" data-aspect="4:3"><span class="asp-shape" style="--w:4;--h:3"></span>4:3<small>標準</small></button>
+          <button class="menu-item" data-aspect="4:5"><span class="asp-shape" style="--w:4;--h:5"></span>4:5<small>縦型</small></button>
+          <button class="menu-item" data-aspect="21:9"><span class="asp-shape" style="--w:21;--h:9"></span>21:9<small>シネマスコープ</small></button>
+          <button class="menu-item" data-aspect="3:4"><span class="asp-shape" style="--w:3;--h:4"></span>3:4<small>ビジネス</small></button>
+        </div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="btnNew" class="btn-ghost" title="新規プロジェクト"><i data-lucide="file-plus"></i><span>新規</span></button>
+      <button id="btnOpen" class="btn-ghost" title="Driveのプロジェクトを開く"><i data-lucide="folder-open"></i><span>開く</span></button>
+      <button id="btnSave" class="btn-ghost" title="Driveに保存 (Ctrl+S)"><i data-lucide="save"></i><span>保存</span></button>
+      <button id="btnExport" class="btn-lamp" title="動画ファイルに書き出す"><i data-lucide="download"></i><span>書き出し</span></button>
+      <div class="more-wrap">
+        <button id="userBtn" class="btn-ghost user-btn" aria-haspopup="true" aria-expanded="false"><i data-lucide="user"></i><span id="userEmail">未ログイン</span></button>
+        <div id="userMenu" class="menu menu-right is-hidden" role="menu">
+          <div class="menu-email" id="userMenuEmail"></div>
+          <button class="menu-item" id="btnChangePw"><i data-lucide="key-round"></i>パスワード変更</button>
+          <button class="menu-item" id="btnLogout"><i data-lucide="log-out"></i>ログアウト</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== メインワークスペース ===== -->
+  <main class="workspace">
+    <!-- 左ペイン -->
+    <section class="pane left-pane" aria-label="メディアとツール">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="media" role="tab"><i data-lucide="film"></i>メディア</button>
+        <button class="tab" data-tab="drive" role="tab"><i data-lucide="cloud"></i>Drive</button>
+        <button class="tab" data-tab="ai" role="tab"><i data-lucide="sparkles"></i>AI自動編集</button>
+        <button class="tab" data-tab="text" role="tab"><i data-lucide="type"></i>テロップ</button>
+      </nav>
+
+      <div class="tab-body" data-body="media">
+        <label id="dropzone" class="dropzone">
+          <input id="fileInput" type="file" multiple accept="video/*,image/*,audio/*" class="sr-only">
+          <i data-lucide="upload"></i>
+          <strong>動画・画像・音声を追加</strong>
+          <span>ここにドロップするか、クリックして選択</span>
+        </label>
+        <div class="chips" id="mediaFilter">
+          <button class="chip active" data-f="all">すべて</button>
+          <button class="chip" data-f="video">動画</button>
+          <button class="chip" data-f="image">画像</button>
+          <button class="chip" data-f="audio">音声</button>
+        </div>
+        <div id="mediaGrid" class="media-grid"></div>
+      </div>
+
+      <div class="tab-body is-hidden" data-body="drive">
+        <div class="row-between">
+          <p class="hint">Driveに保存した素材を読み込めます。保存できるのは1ファイル25MBまでです。</p>
+          <button id="btnDriveRefresh" class="icon-btn" title="一覧を更新"><i data-lucide="refresh-cw"></i></button>
+        </div>
+        <div id="driveList" class="media-grid"></div>
+      </div>
+
+      <div class="tab-body is-hidden" data-body="ai">
+        <p class="hint" style="margin:0 0 14px">Geminiが素材の中身を見て、並び順・各シーンの秒数・テロップを考え、タイムラインに並べます。</p>
+        <label class="field"><span>作りたい動画のテーマ</span>
+          <textarea id="aiTheme" class="inp" rows="4" placeholder="例：週末の箱根旅行のハイライト。家族の笑顔と景色を中心に、最後は夕焼けで締めたい"></textarea>
+        </label>
+        <div class="field"><span>仕上がりの長さ</span>
+          <div class="seg" data-seg="len"><button data-v="15">15秒</button><button data-v="30" class="active">30秒</button><button data-v="60">1分</button><button data-v="180">3分</button></div>
+        </div>
+        <div class="field"><span>テンポ</span>
+          <div class="seg" data-seg="tempo"><button data-v="slow">ゆったり</button><button data-v="normal" class="active">標準</button><button data-v="fast">アップテンポ</button></div>
+        </div>
+        <div class="field"><span>テロップ</span>
+          <div class="seg" data-seg="cap"><button data-v="simple" class="active">シンプル</button><button data-v="variety">バラエティ</button><button data-v="calm">落ち着き</button><button data-v="none">なし</button></div>
+        </div>
+        <label class="check"><input type="checkbox" id="aiBgm" checked>音声素材があればBGMとして敷く</label>
+        <button id="btnAi" class="btn-lamp btn-wide"><i data-lucide="sparkles"></i>構成を作ってタイムラインに並べる</button>
+        <div id="aiResult"></div>
+      </div>
+
+      <div class="tab-body is-hidden" data-body="text">
+        <button id="btnAddText" class="btn-small" style="width:100%;justify-content:center;padding:9px"><i data-lucide="plus"></i>再生位置にテロップを追加</button>
+        <div id="textList" class="text-list"></div>
+      </div>
+    </section>
+
+    <!-- プレビュー -->
+    <section class="pane stage-pane" aria-label="プレビュー">
+      <div id="stage" class="stage">
+        <canvas id="preview" width="1920" height="1080"></canvas>
+        <div class="stage-tag" id="stageTag"></div>
+      </div>
+    </section>
+
+    <!-- プロジェクト情報・インスペクター -->
+    <aside class="pane info-pane" aria-label="プロジェクト情報">
+      <h2 class="pane-title">プロジェクト</h2>
+      <div class="thumb-box"><img id="projThumb" alt="プロジェクトのサムネイル" hidden><span id="projThumbEmpty">サムネイル未設定</span></div>
+      <button id="btnSetThumb" class="btn-small" style="margin-top:8px;width:100%;justify-content:center"><i data-lucide="image"></i>今のフレームをサムネイルにする</button>
+      <dl class="info-list">
+        <dt>画面比率</dt><dd id="infoAspect"></dd>
+        <dt>解像度</dt><dd><select id="selQuality" class="sel" aria-label="解像度"><option value="1080">1080p</option><option value="720">720p</option></select><span id="infoRes" class="tc" style="font-size:12px"></span></dd>
+        <dt>フレームレート</dt><dd><select id="selFps" class="sel" aria-label="フレームレート"><option value="24">24</option><option value="30">30</option><option value="60">60</option></select>fps</dd>
+        <dt>再生時間</dt><dd id="infoDur" class="tc"></dd>
+        <dt>クリップ</dt><dd id="infoClips"></dd>
+        <dt>保存先</dt><dd id="infoSaved"></dd>
+      </dl>
+      <h2 class="pane-title">選択中のクリップ</h2>
+      <div id="inspector"></div>
+    </aside>
+  </main>
+
+  <!-- ===== タイムライン ===== -->
+  <section class="timeline-pane" aria-label="タイムライン">
+    <div class="tl-toolbar">
+      <div class="tl-group">
+        <button class="icon-btn" id="btnHome" title="先頭へ (Home)"><i data-lucide="skip-back"></i></button>
+        <button class="icon-btn" id="btnPrev" title="1コマ戻る (←)"><i data-lucide="chevron-left"></i></button>
+        <button class="play-btn" id="btnPlay" title="再生／一時停止 (Space)"><i data-lucide="play"></i></button>
+        <button class="icon-btn" id="btnNext" title="1コマ進む (→)"><i data-lucide="chevron-right"></i></button>
+        <div class="timecode"><span id="tcNow">00:00.00</span><span class="sep">/</span><span id="tcTotal" class="tot">00:00.00</span></div>
+      </div>
+      <div class="tl-group">
+        <button class="icon-btn" id="btnUndo" title="元に戻す (Ctrl+Z)"><i data-lucide="undo-2"></i></button>
+        <button class="icon-btn" id="btnRedo" title="やり直す (Ctrl+Y)"><i data-lucide="redo-2"></i></button>
+        <button class="icon-btn" id="btnSplit" title="再生位置で分割 (S)"><i data-lucide="scissors"></i></button>
+        <button class="icon-btn" id="btnDelete" title="選択中のクリップを削除 (Delete)"><i data-lucide="trash-2"></i></button>
+        <button class="icon-btn" id="btnAddText2" title="再生位置にテロップを追加"><i data-lucide="type"></i></button>
+      </div>
+      <div class="tl-group zoom">
+        <i data-lucide="zoom-out"></i><input type="range" id="zoom" min="8" max="240" value="60" aria-label="タイムラインの拡大率"><i data-lucide="zoom-in"></i>
+      </div>
+    </div>
+    <div class="tl-body">
+      <div class="tl-heads">
+        <div class="tl-head-ruler"></div>
+        <div class="tl-head hv"><span class="dot v"></span>映像</div>
+        <div class="tl-head ht"><span class="dot t"></span>テロップ</div>
+        <div class="tl-head ha"><span class="dot a"></span>BGM・音声</div>
+      </div>
+      <div id="tlScroll" class="tl-scroll">
+        <div id="tlInner" class="tl-inner">
+          <div id="ruler" class="ruler"></div>
+          <div class="lane lane-video" data-track="video"></div>
+          <div class="lane lane-text" data-track="text"></div>
+          <div class="lane lane-audio" data-track="audio"></div>
+          <div id="playhead" class="playhead"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="mediaPool" aria-hidden="true"></div>
+
+<!-- ===== 認証モーダル ===== -->
+<div id="authModal" class="modal-back is-hidden" role="dialog" aria-modal="true" aria-label="ログイン">
+  <div class="modal">
+    <div class="auth-brand"><span class="brand-mark" aria-hidden="true"></span>AI動画編集スタジオ</div>
+
+    <form id="fLogin" class="auth-view" data-view="login" novalidate>
+      <h2>ログイン</h2>
+      <label class="lbl">メールアドレス<input class="inp" type="email" name="email" autocomplete="email" required></label>
+      <label class="lbl">パスワード
+        <div class="pw-wrap"><input class="inp" type="password" name="password" autocomplete="current-password" required><button type="button" class="eye" aria-label="パスワードを表示"><i data-lucide="eye"></i></button></div>
+      </label>
+      <button type="submit" class="btn-lamp btn-wide">ログイン</button>
+      <div class="auth-links"><button type="button" data-goto="register">新規登録（仮パスワード発行）</button><button type="button" data-goto="reset">パスワードを忘れた</button></div>
+    </form>
+
+    <form id="fRegister" class="auth-view is-hidden" data-view="register" novalidate>
+      <h2>新規登録</h2>
+      <p class="hint" style="margin:0 0 16px">メールアドレスに仮パスワードを発行します。仮パスワードでログインし、新しいパスワードを設定すると登録完了です。</p>
+      <label class="lbl">メールアドレス<input class="inp" type="email" name="email" autocomplete="email" required></label>
+      <button type="submit" class="btn-lamp btn-wide">仮パスワードを発行</button>
+      <div id="regResult" class="auth-result is-hidden"></div>
+      <div class="auth-links"><button type="button" data-goto="login">ログインに戻る</button></div>
+    </form>
+
+    <form id="fChange" class="auth-view is-hidden" data-view="change" novalidate>
+      <h2 id="changeTitle">パスワードの設定</h2>
+      <p class="hint" id="changeHint" style="margin:0 0 16px"></p>
+      <label class="lbl" id="curPwField">現在のパスワード
+        <div class="pw-wrap"><input class="inp" type="password" name="current" autocomplete="current-password"><button type="button" class="eye" aria-label="パスワードを表示"><i data-lucide="eye"></i></button></div>
+      </label>
+      <label class="lbl">新しいパスワード
+        <div class="pw-wrap"><input class="inp" type="password" name="newpw" autocomplete="new-password" required><button type="button" class="eye" aria-label="パスワードを表示"><i data-lucide="eye"></i></button></div>
+      </label>
+      <label class="lbl">新しいパスワード（確認）
+        <div class="pw-wrap"><input class="inp" type="password" name="confirm" autocomplete="new-password" required><button type="button" class="eye" aria-label="パスワードを表示"><i data-lucide="eye"></i></button></div>
+      </label>
+      <p class="rule">8文字以上で、英字と数字を両方含めてください。</p>
+      <button type="submit" class="btn-lamp btn-wide" id="changeSubmit">パスワードを設定して登録を完了</button>
+      <div class="auth-links" id="changeCancelWrap"><button type="button" id="changeCancel">キャンセル</button></div>
+    </form>
+
+    <form id="fReset" class="auth-view is-hidden" data-view="reset" novalidate>
+      <h2>パスワードの再発行</h2>
+      <p class="hint" style="margin:0 0 16px">登録済みのメールアドレスに仮パスワードを送ります。新しいパスワードを設定するまでは、今のパスワードも使えます。</p>
+      <label class="lbl">メールアドレス<input class="inp" type="email" name="email" autocomplete="email" required></label>
+      <button type="submit" class="btn-lamp btn-wide">仮パスワードを再発行</button>
+      <div id="resetResult" class="auth-result is-hidden"></div>
+      <div class="auth-links"><button type="button" data-goto="login">ログインに戻る</button></div>
+    </form>
+
+    <p id="authError" class="auth-error is-hidden" role="alert"></p>
+  </div>
+</div>
+
+<!-- ===== プロジェクト一覧 ===== -->
+<div id="projModal" class="modal-back is-hidden" role="dialog" aria-modal="true" aria-label="プロジェクトを開く">
+  <div class="modal wide">
+    <div class="row-between" style="margin:0"><h2>プロジェクトを開く</h2><button class="icon-btn" data-close title="閉じる"><i data-lucide="x"></i></button></div>
+    <div id="projList" class="proj-list"></div>
+  </div>
+</div>
+
+<!-- ===== 書き出し ===== -->
+<div id="expModal" class="modal-back is-hidden" role="dialog" aria-modal="true" aria-label="書き出し">
+  <div class="modal">
+    <div data-exp="setup">
+      <h2>動画を書き出す</h2>
+      <dl class="info-list" id="expSetupInfo" style="margin-bottom:10px"></dl>
+      <p class="hint">再生しながら実時間で録画します。書き出しが終わるまで、このタブを前面に表示したままにしてください。</p>
+      <div class="modal-actions"><button class="btn-ghost" data-close>キャンセル</button><button class="btn-lamp" id="expStart"><i data-lucide="download"></i>書き出しを開始</button></div>
+    </div>
+    <div data-exp="progress" class="is-hidden">
+      <h2>書き出し中</h2>
+      <div class="bar"><i id="expBar"></i></div>
+      <p class="tc" id="expTime" style="color:var(--dim);font-size:13px"></p>
+      <p class="hint">タブを切り替えたり画面を閉じたりすると、録画が止まることがあります。</p>
+      <div class="modal-actions"><button class="btn-ghost" id="expCancel">中止</button></div>
+    </div>
+    <div data-exp="result" class="is-hidden">
+      <h2>書き出しが完了しました</h2>
+      <video id="expVideo" controls playsinline></video>
+      <p class="hint" id="expMeta"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" data-close>閉じる</button>
+        <button class="btn-ghost" id="expDrive"><i data-lucide="cloud-upload"></i>Driveに保存</button>
+        <a class="btn-lamp" id="expDownload" download><i data-lucide="download"></i>ダウンロード</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="busy" class="busy is-hidden" role="status" aria-live="polite"><div class="busy-box"><i data-lucide="loader-circle" class="spin"></i><span id="busyMsg">処理中…</span></div></div>
+<div id="toasts" aria-live="polite"></div>
+<script>
+'use strict';
+/* =========================================================
+   設定：GASのWebアプリURLをここに貼り付け
+   ========================================================= */
+const CONFIG = {
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbxelVilHVe7XFxNTBEu1cgfhtVAK8MvVeoDRnPUEd8vqK4Ob5nUUALfxfVb_bBSpDma/exec',
+  MAX_UPLOAD_MB: 25,
+  STORAGE_KEY: 'ai_douga_henshu_session'
+};
+
+const ASPECTS = {
+  '16:9': [16, 9, 'YouTube'], '9:16': [9, 16, 'ショート・TikTok・Reels'],
+  '1:1': [1, 1, 'Instagram'], '4:3': [4, 3, '標準'], '4:5': [4, 5, '縦型'],
+  '21:9': [21, 9, 'シネマスコープ'], '3:4': [3, 4, 'ビジネス']
+};
+const MAIN_ASPECTS = ['16:9', '9:16'];
+const MIN_DUR = 0.2;
+const DEFAULT_NAME = '無題のプロジェクト';
+const CAPTION_PRESETS = {
+  simple:  { style: 'outline', tone: 'シンプルで読みやすい' },
+  variety: { style: 'pop',     tone: 'バラエティ番組風に楽しく、感嘆やツッコミを交えて' },
+  calm:    { style: 'band',    tone: '落ち着いた上品な語り口' },
+  none:    { style: null,      tone: 'なし' }
+};
+
+/* ===== 小道具 ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const even = n => Math.max(2, Math.round(n / 2) * 2);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function fmt(t, cs = true) {
+  t = Math.max(0, t || 0);
+  const m = Math.floor(t / 60), s = Math.floor(t % 60), c = Math.floor((t * 100) % 100);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` + (cs ? `.${String(c).padStart(2, '0')}` : '');
+}
+function fmtRuler(t, step) {
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return step < 1 ? `${m}:${s.toFixed(2).padStart(5, '0')}` : `${m}:${String(Math.round(s)).padStart(2, '0')}`;
+}
+function fmtDate(s) { if (!s) return ''; const d = new Date(s); return isNaN(d) ? '' : d.toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+function fmtMB(b) { return (b / 1048576).toFixed(1) + 'MB'; }
+function icons() { if (window.lucide) lucide.createIcons(); }
+function toast(msg, type = 'info', ms = 4000) {
+  const el = document.createElement('div'); el.className = 'toast ' + type; el.textContent = msg;
+  $('#toasts').appendChild(el); setTimeout(() => el.remove(), ms);
+}
+function busy(on, msg = '処理中…') { $('#busyMsg').textContent = msg; $('#busy').classList.toggle('is-hidden', !on); }
+
+/* ===== API（GAS） ===== */
+async function api(action, payload = {}, { auth = true } = {}) {
+  if (CONFIG.GAS_URL.includes('ここに')) throw new Error('index.html の CONFIG.GAS_URL に、GASのWebアプリURLを設定してください');
+  const body = Object.assign({ action }, payload);
+  if (auth) body.token = Auth.token;
+  let data;
+  try {
+    const res = await fetch(CONFIG.GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+    data = await res.json();
+  } catch (e) {
+    throw new Error('サーバーに接続できませんでした。GAS_URLと、デプロイのアクセス権（全員）を確認してください');
+  }
+  if (!data.ok) {
+    const err = new Error(data.error || 'エラーが発生しました'); err.code = data.code || '';
+    if (err.code === 'SESSION_EXPIRED') { Auth.clear(); showAuth('login'); }
+    if (err.code === 'MUST_CHANGE') { Auth.mustChange = true; Auth.save(); showAuth('change'); }
+    throw err;
+  }
+  return data;
+}
+
+/* ===== 認証 ===== */
+const Auth = {
+  token: null, email: null, mustChange: false,
+  load() { try { const s = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || 'null'); if (s) Object.assign(this, s); } catch (e) {} },
+  save() { try { localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({ token: this.token, email: this.email, mustChange: this.mustChange })); } catch (e) {} },
+  clear() { this.token = null; this.email = null; this.mustChange = false; try { localStorage.removeItem(CONFIG.STORAGE_KEY); } catch (e) {} updateUserUI(); }
+};
+
+function showAuth(view, opts = {}) {
+  $('#authModal').classList.remove('is-hidden');
+  $$('#authModal .auth-view').forEach(f => f.classList.toggle('is-hidden', f.dataset.view !== view));
+  $('#authError').classList.add('is-hidden');
+  $$('#regResult, #resetResult').forEach(b => { b.classList.add('is-hidden'); b.innerHTML = ''; });
+  if (view === 'change') {
+    const forced = !!Auth.mustChange;
+    $('#fChange').reset();
+    $('#curPwField').classList.toggle('is-hidden', forced);
+    $('#changeCancelWrap').classList.toggle('is-hidden', forced);
+    $('#changeTitle').textContent = forced ? '本パスワードの設定' : 'パスワードの変更';
+    $('#changeHint').textContent = forced
+      ? '仮パスワードでログインしました。新しいパスワードを設定すると本登録が完了します。'
+      : '今のパスワードと、新しいパスワードを入力してください。';
+    $('#changeSubmit').textContent = forced ? 'パスワードを設定して登録を完了' : 'パスワードを変更';
+  }
+  if (opts.email) $$(`#authModal [data-view="${view}"] input[name=email]`).forEach(i => { i.value = opts.email; });
+  icons();
+  const first = $$(`#authModal [data-view="${view}"] input`).find(i => !i.closest('.is-hidden') && !i.value);
+  if (first) setTimeout(() => first.focus(), 30);
+}
+function hideAuth() { $('#authModal').classList.add('is-hidden'); updateUserUI(); }
+function authError(msg) { const e = $('#authError'); e.textContent = msg; e.classList.remove('is-hidden'); }
+function updateUserUI() { $('#userEmail').textContent = Auth.email || '未ログイン'; $('#userMenuEmail').textContent = Auth.email || ''; }
+
+async function withSubmit(form, fn) {
+  const b = form.querySelector('[type=submit]'); b.disabled = true; $('#authError').classList.add('is-hidden');
+  try { await fn(); } catch (err) { authError(err.message); } finally { b.disabled = false; }
+}
+function showTempResult(box, r, email) {
+  box.innerHTML = `<p>${esc(r.message)}</p>` + (r.tempPassword
+    ? `<p style="margin-top:8px">仮パスワード：<span class="tp">${esc(r.tempPassword)}</span></p><button type="button" class="btn-lamp btn-wide" style="margin-top:12px" data-use-temp>このパスワードでログインする</button>`
+    : `<button type="button" class="btn-small" style="margin-top:10px" data-goto="login">ログイン画面へ</button>`);
+  box.classList.remove('is-hidden');
+  const u = box.querySelector('[data-use-temp]');
+  if (u) u.onclick = () => { showAuth('login', { email }); $('#fLogin').elements.password.value = r.tempPassword; $('#fLogin [type=submit]').focus(); };
+}
+
+function bindAuth() {
+  $('#authModal').addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) showAuth(g.dataset.goto); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.eye'); if (!b) return;
+    const inp = b.parentElement.querySelector('input'); const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.setAttribute('aria-label', show ? 'パスワードを隠す' : 'パスワードを表示');
+    b.innerHTML = `<i data-lucide="${show ? 'eye-off' : 'eye'}"></i>`; icons();
+  });
+  $('#fLogin').addEventListener('submit', e => {
+    e.preventDefault(); const f = e.target;
+    withSubmit(f, async () => {
+      const email = f.elements.email.value.trim(), password = f.elements.password.value;
+      if (!email || !password) throw new Error('メールアドレスとパスワードを入力してください');
+      const r = await api('login', { email, password }, { auth: false });
+      Object.assign(Auth, { token: r.token, email: r.email, mustChange: !!r.mustChange }); Auth.save(); f.reset();
+      if (Auth.mustChange) showAuth('change'); else { hideAuth(); toast('ログインしました', 'ok'); }
+    });
+  });
+  $('#fRegister').addEventListener('submit', e => {
+    e.preventDefault(); const f = e.target;
+    withSubmit(f, async () => {
+      const email = f.elements.email.value.trim();
+      if (!email) throw new Error('メールアドレスを入力してください');
+      const r = await api('register', { email }, { auth: false });
+      showTempResult($('#regResult'), r, email);
+    });
+  });
+  $('#fReset').addEventListener('submit', e => {
+    e.preventDefault(); const f = e.target;
+    withSubmit(f, async () => {
+      const email = f.elements.email.value.trim();
+      if (!email) throw new Error('メールアドレスを入力してください');
+      const r = await api('resetPassword', { email }, { auth: false });
+      showTempResult($('#resetResult'), r, email);
+    });
+  });
+  $('#fChange').addEventListener('submit', e => {
+    e.preventDefault(); const f = e.target;
+    withSubmit(f, async () => {
+      const np = f.elements.newpw.value, cf = f.elements.confirm.value;
+      if (!Auth.mustChange && !f.elements.current.value) throw new Error('現在のパスワードを入力してください');
+      if (!/^(?=.*[A-Za-z])(?=.*\d).{8,64}$/.test(np)) throw new Error('パスワードは8文字以上で、英字と数字を両方含めてください');
+      if (np !== cf) throw new Error('確認用のパスワードが一致しません');
+      await api('changePassword', { newPassword: np, currentPassword: f.elements.current.value });
+      const forced = Auth.mustChange; Auth.mustChange = false; Auth.save(); f.reset(); hideAuth();
+      toast(forced ? '本登録が完了しました。ようこそ！' : 'パスワードを変更しました', 'ok');
+    });
+  });
+  $('#changeCancel').addEventListener('click', hideAuth);
+  $('#btnChangePw').addEventListener('click', () => { closeMenus(); showAuth('change'); });
+  $('#btnLogout').addEventListener('click', () => { closeMenus(); logout(); });
+}
+async function logout() {
+  if (state.dirty && hasContent() && !confirm('保存していない変更があります。ログアウトしますか？')) return;
+  try { await api('logout'); } catch (e) {}
+  Auth.clear(); resetProject(); state.driveAssets = null; showAuth('login');
+}
+
+/* ===== 状態 ===== */
+const state = {
+  aspect: '16:9', quality: 1080, fps: 30,
+  assets: [],                              // {id,name,kind,mime,blob,size,url,duration,thumb,driveFileId,img,w,h,peaks}
+  tracks: { video: [], text: [], audio: [] },
+  time: 0, playing: false, selected: null, pxPerSec: 60,
+  project: { id: null, name: DEFAULT_NAME, thumb: null },
+  history: [], future: [], dirty: false,
+  mediaFilter: 'all', driveAssets: null,
+  ai: { len: '30', tempo: 'normal', cap: 'simple' }
+};
+const assetById = id => state.assets.find(a => a.id === id);
+const findClip = (track, id) => (state.tracks[track] || []).find(c => c.id === id);
+const hasContent = () => state.assets.length > 0 || state.tracks.text.length > 0;
+function videoLayout() { let t = 0; return state.tracks.video.map(c => { const o = { clip: c, start: t, end: t + c.duration }; t += c.duration; return o; }); }
+function totalDuration() {
+  const v = state.tracks.video.reduce((s, c) => s + c.duration, 0);
+  const tx = Math.max(0, ...state.tracks.text.map(c => c.start + c.duration));
+  const au = Math.max(0, ...state.tracks.audio.map(c => c.start + c.duration));
+  return Math.max(v, tx, au);
+}
+function markDirty() { state.dirty = true; renderSaved(); }
+
+/* ===== 履歴（元に戻す／やり直す） ===== */
+const snapshot = () => JSON.stringify(state.tracks);
+function commitHistory(prev) { state.history.push(prev); if (state.history.length > 80) state.history.shift(); state.future = []; updateHistoryBtns(); }
+function mutate(fn) { const s = snapshot(); fn(); if (snapshot() !== s) { commitHistory(s); markDirty(); } afterChange(); }
+function undo() { if (!state.history.length) return; state.future.push(snapshot()); state.tracks = JSON.parse(state.history.pop()); markDirty(); afterChange(); }
+function redo() { if (!state.future.length) return; state.history.push(snapshot()); state.tracks = JSON.parse(state.future.pop()); markDirty(); afterChange(); }
+function updateHistoryBtns() { $('#btnUndo').disabled = !state.history.length; $('#btnRedo').disabled = !state.future.length; }
+function afterChange() {
+  gcMedia();
+  if (state.selected && !findClip(state.selected.track, state.selected.id)) state.selected = null;
+  state.time = clamp(state.time, 0, totalDuration());
+  renderTimeline(); renderInspector(); renderTextList(); updateHistoryBtns(); needsDraw = true;
+}
+
+/* ===== 素材の読み込み ===== */
+function kindOf(mime, name) {
+  if (mime && mime.startsWith('video/')) return 'video';
+  if (mime && mime.startsWith('image/')) return 'image';
+  if (mime && mime.startsWith('audio/')) return 'audio';
+  const ext = (String(name).split('.').pop() || '').toLowerCase();
+  if (['mp4', 'mov', 'webm', 'm4v', 'mkv'].includes(ext)) return 'video';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)) return 'image';
+  if (['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'opus'].includes(ext)) return 'audio';
+  return null;
+}
+function waitEvent(el, ev, timeout = 20000) {
+  return new Promise((res, rej) => {
+    const t = setTimeout(() => { cleanup(); rej(new Error('読み込みがタイムアウトしました')); }, timeout);
+    const ok = () => { cleanup(); res(); };
+    const ng = () => { cleanup(); rej(new Error('このファイル形式はブラウザで扱えません')); };
+    function cleanup() { clearTimeout(t); el.removeEventListener(ev, ok); el.removeEventListener('error', ng); }
+    el.addEventListener(ev, ok); el.addEventListener('error', ng);
+  });
+}
+function makeThumb(src, w, h, max = 240) {
+  const c = document.createElement('canvas'); const s = max / Math.max(w, h);
+  c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.72);
+}
+async function computePeaks(blob, n = 1600) {
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
+  const ctx = new OAC(1, 44100, 44100);
+  const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+  const data = buf.getChannelData(0), block = Math.max(1, Math.floor(data.length / n)), peaks = [];
+  let mx = 0;
+  for (let i = 0; i < n; i++) { let p = 0; const o = i * block; for (let j = 0; j < block; j += 8) { const v = Math.abs(data[o + j] || 0); if (v > p) p = v; } peaks.push(p); if (p > mx) mx = p; }
+  return mx ? peaks.map(p => p / mx) : peaks;
+}
+async function probeAsset(a) {
+  if (a.kind === 'image') {
+    const img = new Image(); img.src = a.url; await waitEvent(img, 'load');
+    a.img = img; a.w = img.naturalWidth; a.h = img.naturalHeight; a.duration = 4;
+    if (!a.thumb) a.thumb = makeThumb(img, a.w, a.h);
+  } else if (a.kind === 'video') {
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = a.url;
+    $('#mediaPool').appendChild(v);
+    try {
+      await waitEvent(v, 'loadedmetadata');
+      if (!isFinite(v.duration)) { v.currentTime = 1e7; await waitEvent(v, 'seeked'); }  // 長さ不明のwebm対策
+      a.duration = isFinite(v.duration) ? v.duration : 0; a.w = v.videoWidth; a.h = v.videoHeight;
+      if (!a.duration) throw new Error('動画の長さを読み取れませんでした');
+      if (!a.thumb) { v.currentTime = Math.min(1, a.duration * 0.25); await waitEvent(v, 'seeked'); a.thumb = makeThumb(v, a.w, a.h); }
+    } finally { v.removeAttribute('src'); v.load(); v.remove(); }
+  } else if (a.kind === 'audio') {
+    const au = new Audio(); au.preload = 'metadata'; au.src = a.url; await waitEvent(au, 'loadedmetadata');
+    a.duration = isFinite(au.duration) ? au.duration : 0;
+    try { a.peaks = await computePeaks(a.blob); } catch (e) { a.peaks = null; }
+    if (!a.duration) throw new Error('音声の長さを読み取れませんでした');
+  }
+}
+async function createAsset(blob, name, opts = {}) {
+  const kind = opts.kind || kindOf(blob.type, name);
+  if (!kind) throw new Error(`${name}：対応していないファイル形式です`);
+  const a = { id: opts.id || uid(), name, kind, mime: blob.type || opts.mime || '', blob, size: blob.size, url: URL.createObjectURL(blob), duration: 0, thumb: opts.thumb || null, driveFileId: opts.driveFileId || null };
+  try { await probeAsset(a); } catch (e) { URL.revokeObjectURL(a.url); throw new Error(`${name}：${e.message}`); }
+  state.assets.push(a); return a;
+}
+async function handleFiles(files) {
+  const list = [...files]; if (!list.length) return [];
+  const added = [];
+  for (let i = 0; i < list.length; i++) {
+    busy(true, `素材を読み込み中… (${i + 1}/${list.length})`);
+    try { added.push(await createAsset(list[i], list[i].name)); } catch (e) { toast(e.message, 'error', 6000); }
+  }
+  busy(false); renderMedia();
+  if (added.length) { toast(`${added.length}件の素材を追加しました`, 'ok'); markDirty(); switchTab('media'); }
+  return added;
+}
+function removeAsset(id) {
+  const used = [...state.tracks.video, ...state.tracks.audio].some(c => c.assetId === id);
+  if (used && !confirm('この素材はタイムラインで使われています。タイムラインからも外しますか？')) return;
+  mutate(() => {
+    state.tracks.video = state.tracks.video.filter(c => c.assetId !== id);
+    state.tracks.audio = state.tracks.audio.filter(c => c.assetId !== id);
+  });
+  const a = assetById(id); state.assets = state.assets.filter(x => x.id !== id);
+  if (a) setTimeout(() => URL.revokeObjectURL(a.url), 1000);
+  markDirty(); renderMedia();
+}
+
+/* ===== Drive連携 ===== */
+function blobToBase64(blob) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('ファイルの読み取りに失敗しました')); r.readAsDataURL(blob); });
+}
+async function b64ToBlob(b64, mime) { const r = await fetch(`data:${mime || 'application/octet-stream'};base64,${b64}`); return r.blob(); }
+async function uploadToDrive(a, quiet = false) {
+  if (a.size > CONFIG.MAX_UPLOAD_MB * 1048576) throw new Error(`${a.name} は ${fmtMB(a.size)} あります。Driveに保存できるのは ${CONFIG.MAX_UPLOAD_MB}MB までです`);
+  const base64 = await blobToBase64(a.blob);
+  const r = await api('uploadAsset', { name: a.name, mimeType: a.mime || a.blob.type, kind: a.kind, duration: a.duration, base64, thumb: a.thumb || '' });
+  a.driveFileId = r.asset.fileId; state.driveAssets = null;
+  renderMedia(); if (!quiet) toast(`${a.name} をDriveに保存しました`, 'ok');
+  return r.asset;
+}
+async function loadDriveList() {
+  const box = $('#driveList');
+  box.innerHTML = `<div class="empty"><i data-lucide="loader-circle" class="spin"></i><br>読み込み中…</div>`; icons();
+  try { const r = await api('listAssets'); state.driveAssets = r.assets || []; renderDrive(); }
+  catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+function renderDrive() {
+  const box = $('#driveList'), list = state.driveAssets || [];
+  box.innerHTML = list.length ? list.map(d => {
+    const loaded = state.assets.some(a => a.driveFileId === d.fileId);
+    return `<div class="media-card static kind-${d.kind}" data-fid="${esc(d.fileId)}">
+      <div class="media-thumb"><span class="kind-bar"></span>${d.thumb ? `<img src="${d.thumb}" alt="">` : `<i data-lucide="${d.kind === 'audio' ? 'music-2' : 'film'}"></i>`}<span class="badge">${fmt(d.duration, false)}</span></div>
+      <div class="media-name" title="${esc(d.name)}">${esc(d.name)}</div>
+      <div class="media-actions">${loaded ? '<span class="loaded">読み込み済み</span>' : '<button data-act="import" title="ライブラリに読み込む"><i data-lucide="cloud-download"></i></button>'}<button data-act="trash" title="Driveから削除（ゴミ箱へ）"><i data-lucide="trash-2"></i></button></div>
+    </div>`;
+  }).join('') : `<div class="empty">Driveに保存した素材はまだありません。<br>メディアの <i data-lucide="cloud-upload"></i> から保存できます。</div>`;
+  icons();
+}
+async function importFromDrive(fid) {
+  const d = (state.driveAssets || []).find(x => x.fileId === fid); if (!d) return;
+  busy(true, `${d.name} を読み込み中…`);
+  try {
+    const r = await api('getAsset', { fileId: fid });
+    const blob = await b64ToBlob(r.base64, r.mimeType);
+    await createAsset(blob, d.name, { kind: d.kind, driveFileId: fid, thumb: d.thumb || null });
+    renderMedia(); renderDrive(); markDirty(); toast(`${d.name} を読み込みました`, 'ok');
+  } catch (e) { toast(e.message, 'error', 6000); } finally { busy(false); }
+}
+async function trashDriveAsset(fid) {
+  const d = (state.driveAssets || []).find(x => x.fileId === fid); if (!d) return;
+  if (!confirm(`「${d.name}」をDriveのゴミ箱に移動します。よろしいですか？`)) return;
+  try {
+    await api('deleteAsset', { fileId: fid });
+    state.driveAssets = state.driveAssets.filter(x => x.fileId !== fid);
+    state.assets.forEach(a => { if (a.driveFileId === fid) a.driveFileId = null; });
+    renderDrive(); renderMedia(); toast('Driveのゴミ箱に移動しました', 'ok');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ===== メディアライブラリ表示 ===== */
+function renderMedia() {
+  const f = state.mediaFilter, list = state.assets.filter(a => f === 'all' || a.kind === f);
+  $('#mediaGrid').innerHTML = list.length ? list.map(a => `
+    <div class="media-card kind-${a.kind}" draggable="true" data-id="${a.id}" title="ダブルクリックでタイムラインに追加">
+      <div class="media-thumb"><span class="kind-bar"></span>${a.thumb ? `<img src="${a.thumb}" alt="">` : `<i data-lucide="music-2"></i>`}
+        <span class="badge">${a.kind === 'image' ? '画像' : fmt(a.duration, false)}</span>
+        ${a.driveFileId ? '<span class="cloud-mark" title="Driveに保存済み"><i data-lucide="cloud"></i></span>' : ''}</div>
+      <div class="media-name" title="${esc(a.name)}">${esc(a.name)}</div>
+      <div class="media-actions">
+        <button data-act="add" title="タイムラインに追加"><i data-lucide="plus"></i></button>
+        ${a.driveFileId ? '' : '<button data-act="upload" title="Driveに保存"><i data-lucide="cloud-upload"></i></button>'}
+        <button data-act="remove" title="ライブラリから外す"><i data-lucide="x"></i></button>
+      </div>
+    </div>`).join('')
+    : `<div class="empty">${state.assets.length ? 'この種類の素材はありません。' : '素材を追加すると、ここに並びます。<br>カードをタイムラインへドラッグして配置できます。'}</div>`;
+  icons();
+}
+function switchTab(name) {
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  $$('.tab-body').forEach(b => b.classList.toggle('is-hidden', b.dataset.body !== name));
+  if (name === 'drive' && !state.driveAssets && Auth.token && !Auth.mustChange) loadDriveList();
+  if (name === 'drive' && state.driveAssets) renderDrive();
+}
+/* ===== タイムライン操作 ===== */
+function addToTimeline(a, at = null) {
+  mutate(() => {
+    if (a.kind === 'audio') {
+      const end = Math.max(0, ...state.tracks.audio.map(c => c.start + c.duration));
+      const c = { id: uid(), assetId: a.id, start: at != null ? Math.max(0, at) : end, inPoint: 0, duration: a.duration, volume: 0.8, fadeIn: true, fadeOut: true };
+      state.tracks.audio.push(c); state.selected = { track: 'audio', id: c.id };
+    } else {
+      const c = { id: uid(), assetId: a.id, inPoint: 0, duration: a.kind === 'video' ? Math.max(0.5, a.duration) : 4, motion: a.kind === 'image' ? 'zoomIn' : 'none', fade: false, fit: 'cover', volume: 1 };
+      let idx = state.tracks.video.length;
+      if (at != null) { idx = 0; let t = 0; for (const v of state.tracks.video) { if (t + v.duration / 2 < at) idx++; t += v.duration; } }
+      state.tracks.video.splice(idx, 0, c); state.selected = { track: 'video', id: c.id };
+    }
+  });
+}
+function addCaption() {
+  mutate(() => {
+    const c = { id: uid(), start: state.time, duration: 3, text: 'テキストを入力', pos: 'bottom', size: 'M', style: 'outline' };
+    state.tracks.text.push(c); state.selected = { track: 'text', id: c.id };
+  });
+  setTimeout(() => { const ta = $('#inspector textarea'); if (ta) { ta.focus(); ta.select(); } }, 30);
+}
+function splitAtPlayhead() {
+  const t = state.time, trk = state.selected ? state.selected.track : 'video';
+  let done = false;
+  mutate(() => {
+    if (trk === 'video') {
+      const L = videoLayout().find(l => t > l.start + MIN_DUR && t < l.end - MIN_DUR); if (!L) return;
+      const c = L.clip, a = assetById(c.assetId), cut = t - L.start;
+      const c2 = Object.assign({}, c, { id: uid(), inPoint: a && a.kind === 'video' ? c.inPoint + cut : 0, duration: c.duration - cut });
+      c.duration = cut; state.tracks.video.splice(state.tracks.video.indexOf(c) + 1, 0, c2);
+      state.selected = { track: 'video', id: c2.id }; done = true;
+    } else {
+      const arr = state.tracks[trk];
+      const c = arr.find(x => t > x.start + MIN_DUR && t < x.start + x.duration - MIN_DUR); if (!c) return;
+      const cut = t - c.start, c2 = Object.assign({}, c, { id: uid(), start: t, duration: c.duration - cut });
+      if (trk === 'audio') { c2.inPoint = c.inPoint + cut; c.fadeOut = false; c2.fadeIn = false; }
+      c.duration = cut; arr.splice(arr.indexOf(c) + 1, 0, c2);
+      state.selected = { track: trk, id: c2.id }; done = true;
+    }
+  });
+  if (!done) toast('再生位置にクリップがありません（端に近すぎる場合も分割できません）');
+}
+function deleteSelected() {
+  const s = state.selected; if (!s) return;
+  mutate(() => { state.tracks[s.track] = state.tracks[s.track].filter(c => c.id !== s.id); state.selected = null; });
+}
+function select(track, id) {
+  state.selected = track ? { track, id } : null;
+  $$('.clip', tlInner).forEach(el => el.classList.toggle('selected', !!track && el.dataset.id === id));
+  renderInspector(); renderTextList();
+}
+function seek(t) { state.time = clamp(t, 0, totalDuration()); needsDraw = true; updatePlayhead(); }
+function snapTime(t, excludeId) {
+  const thr = 8 / state.pxPerSec, pts = [0, state.time];
+  videoLayout().forEach(l => pts.push(l.start, l.end));
+  [...state.tracks.text, ...state.tracks.audio].forEach(c => { if (c.id !== excludeId) pts.push(c.start, c.start + c.duration); });
+  let best = null, bd = thr;
+  for (const p of pts) { const d = Math.abs(p - t); if (d < bd) { bd = d; best = p; } }
+  return best != null ? best : Math.round(t * 20) / 20;
+}
+
+/* ===== タイムライン描画 ===== */
+const tlScroll = $('#tlScroll'), tlInner = $('#tlInner'), rulerEl = $('#ruler'), playheadEl = $('#playhead');
+const lanes = { video: $('.lane-video'), text: $('.lane-text'), audio: $('.lane-audio') };
+const tcNow = $('#tcNow');
+let renderQueued = false;
+function scheduleRender() { if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; renderTimeline(); }); }
+function clipHTML(track, c, start) {
+  const px = state.pxPerSec, a = c.assetId ? assetById(c.assetId) : null;
+  const w = Math.max(6, c.duration * px);
+  const cls = ['clip', 'clip-' + track];
+  if (state.selected && state.selected.id === c.id) cls.push('selected');
+  if (track !== 'text' && !a) cls.push('missing');
+  let inner = '';
+  if (track === 'video') {
+    const fx = [c.motion && c.motion !== 'none' ? '動き' : '', c.fade ? 'フェード' : ''].filter(Boolean).join(' ');
+    inner = `${a && a.thumb ? `<div class="thumbs" style="background-image:url('${a.thumb}')"></div>` : ''}<div class="clip-label">${esc(a ? a.name : '素材が見つかりません')}</div><div class="clip-dur">${c.duration.toFixed(1)}s</div>${fx && w > 110 ? `<div class="clip-fx">${fx}</div>` : ''}`;
+  } else if (track === 'text') {
+    inner = `<div class="clip-label">${esc(c.text || '（空）')}</div>`;
+  } else {
+    inner = `<canvas class="wave" data-id="${c.id}" width="${Math.min(4000, Math.round(w))}" height="44"></canvas><div class="clip-label">${esc(a ? a.name : '素材が見つかりません')}</div>`;
+  }
+  return `<div class="${cls.join(' ')}" data-track="${track}" data-id="${c.id}" style="left:${start * px}px;width:${w}px"><div class="h h-l"></div>${inner}<div class="h h-r"></div></div>`;
+}
+function drawWave(cvs) {
+  const c = findClip('audio', cvs.dataset.id), a = c && assetById(c.assetId);
+  const x = cvs.getContext('2d'), W = cvs.width, H = cvs.height; x.clearRect(0, 0, W, H);
+  if (!a || !a.peaks || !a.peaks.length || !a.duration) return;
+  x.fillStyle = 'rgba(108,195,138,.85)'; const n = a.peaks.length;
+  for (let i = 0; i < W; i++) {
+    const t = c.inPoint + (i / W) * c.duration;
+    const p = a.peaks[Math.min(n - 1, Math.floor(t / a.duration * n))] || 0;
+    const h = Math.max(1, p * (H - 8)); x.fillRect(i, (H - h) / 2, 1, h);
+  }
+}
+function renderTimeline() {
+  const px = state.pxPerSec, total = totalDuration();
+  const width = Math.max(tlScroll.clientWidth, (total + 8) * px);
+  tlInner.style.width = width + 'px';
+  const step = [0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300].find(s => s * px >= 64) || 600;
+  let h = '';
+  for (let i = 0; i * step * px < width; i++) {
+    const t = i * step;
+    h += `<div class="tick" style="left:${t * px}px"><span>${fmtRuler(t, step)}</span></div><div class="tick minor" style="left:${(t + step / 2) * px}px"></div>`;
+  }
+  rulerEl.innerHTML = h;
+  lanes.video.innerHTML = videoLayout().map(L => clipHTML('video', L.clip, L.start)).join('');
+  lanes.text.innerHTML = state.tracks.text.map(c => clipHTML('text', c, c.start)).join('');
+  lanes.audio.innerHTML = state.tracks.audio.map(c => clipHTML('audio', c, c.start)).join('');
+  $$('canvas.wave', lanes.audio).forEach(drawWave);
+  updatePlayhead(); renderInfo();
+}
+function updatePlayhead() {
+  const x = state.time * state.pxPerSec;
+  playheadEl.style.transform = `translateX(${x}px)`;
+  tcNow.textContent = fmt(state.time);
+  if (state.playing) { const sl = tlScroll.scrollLeft, w = tlScroll.clientWidth; if (x > sl + w - 60 || x < sl) tlScroll.scrollLeft = x - 80; }
+  if (Exporter.active) Exporter.progress();
+}
+function renderTextList() {
+  const list = [...state.tracks.text].sort((a, b) => a.start - b.start);
+  $('#textList').innerHTML = list.length ? list.map(c => `<button class="text-item${state.selected && state.selected.id === c.id ? ' active' : ''}" data-id="${c.id}"><span class="tc">${fmt(c.start)}</span><span>${esc(c.text || '（空のテロップ）')}</span></button>`).join('')
+    : `<div class="empty">テロップはまだありません。<br>再生位置を決めてから追加するか、AI自動編集で自動作成できます。</div>`;
+}
+
+/* タイムラインのドラッグ操作 */
+let drag = null;
+function bindTimeline() {
+  const timeAt = e => (e.clientX - tlInner.getBoundingClientRect().left) / state.pxPerSec;
+  tlInner.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || Exporter.active) return;
+    const clipEl = e.target.closest('.clip');
+    if (clipEl) {
+      const track = clipEl.dataset.track, id = clipEl.dataset.id, c = findClip(track, id); if (!c) return;
+      select(track, id);
+      const mode = e.target.classList.contains('h-l') ? 'trimL' : e.target.classList.contains('h-r') ? 'trimR' : 'move';
+      const origStart = track === 'video' ? videoLayout().find(l => l.clip.id === id).start : c.start;
+      drag = { mode, track, id, x0: e.clientX, orig: Object.assign({}, c), origStart, snap: snapshot(), moved: false };
+      e.preventDefault();
+    } else {
+      drag = { mode: 'scrub' }; if (state.selected) select(null); seek(timeAt(e));
+    }
+    try { tlInner.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  tlInner.addEventListener('pointermove', e => {
+    if (!drag) return;
+    if (drag.mode === 'scrub') { seek(timeAt(e)); return; }
+    if (Math.abs(e.clientX - drag.x0) > 3) drag.moved = true;
+    if (!drag.moved) return;
+    const dx = (e.clientX - drag.x0) / state.pxPerSec, c = findClip(drag.track, drag.id); if (!c) return;
+    const o = drag.orig, a = c.assetId ? assetById(c.assetId) : null;
+    const src = a && a.kind !== 'image' ? a.duration : Infinity;
+    if (drag.mode === 'move') {
+      if (drag.track === 'video') {
+        const el = tlInner.querySelector(`.clip[data-id="${c.id}"]`);
+        if (el) { el.style.transform = `translateX(${dx * state.pxPerSec}px)`; el.classList.add('dragging'); }
+        return;
+      }
+      c.start = snapTime(Math.max(0, o.start + dx), c.id);
+    } else if (drag.mode === 'trimR') {
+      const maxD = drag.track === 'text' ? 600 : (a && a.kind === 'image' ? 60 : src - (o.inPoint || 0));
+      let d = o.duration + dx;
+      if (drag.track !== 'video') d = snapTime(c.start + d, c.id) - c.start;
+      c.duration = clamp(d, MIN_DUR, maxD);
+    } else if (drag.mode === 'trimL') {
+      if (drag.track === 'video' && a && a.kind === 'image') { c.duration = clamp(o.duration - dx, MIN_DUR, 60); }
+      else if (drag.track === 'video') { const d = clamp(dx, -o.inPoint, o.duration - MIN_DUR); c.inPoint = o.inPoint + d; c.duration = o.duration - d; }
+      else if (drag.track === 'text') { const d = clamp(snapTime(o.start + dx, c.id) - o.start, -o.start, o.duration - MIN_DUR); c.start = o.start + d; c.duration = o.duration - d; }
+      else { const d = clamp(snapTime(o.start + dx, c.id) - o.start, Math.max(-o.inPoint, -o.start), o.duration - MIN_DUR); c.start = o.start + d; c.inPoint = o.inPoint + d; c.duration = o.duration - d; }
+    }
+    scheduleRender(); needsDraw = true;
+  });
+  const end = e => {
+    if (!drag) return;
+    if (drag.mode === 'move' && drag.track === 'video' && drag.moved) {
+      const dx = (e.clientX - drag.x0) / state.pxPerSec, center = drag.origStart + dx + drag.orig.duration / 2;
+      const arr = state.tracks.video, idx = arr.findIndex(c => c.id === drag.id);
+      if (idx >= 0) {
+        const [item] = arr.splice(idx, 1); let t = 0, ni = 0;
+        for (const c of arr) { if (t + c.duration / 2 < center) ni++; t += c.duration; }
+        arr.splice(ni, 0, item);
+      }
+    }
+    if (drag.mode !== 'scrub' && snapshot() !== drag.snap) { commitHistory(drag.snap); markDirty(); }
+    drag = null; afterChange();
+  };
+  tlInner.addEventListener('pointerup', end);
+  tlInner.addEventListener('pointercancel', end);
+  tlInner.addEventListener('dblclick', e => { if (e.target.closest('.clip-text')) { const ta = $('#inspector textarea'); if (ta) ta.focus(); } });
+
+  Object.values(lanes).forEach(l => {
+    l.addEventListener('dragover', e => { e.preventDefault(); l.classList.add('drop'); });
+    l.addEventListener('dragleave', () => l.classList.remove('drop'));
+    l.addEventListener('drop', async e => {
+      l.classList.remove('drop'); e.preventDefault(); e.stopPropagation();
+      let at = timeAt(e);
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        const added = await handleFiles(e.dataTransfer.files);
+        for (const a of added) { addToTimeline(a, at); at += a.kind === 'image' ? 4 : a.duration; }
+        return;
+      }
+      const a = assetById(e.dataTransfer.getData('text/plain')); if (a) addToTimeline(a, at);
+    });
+  });
+  $('#zoom').addEventListener('input', e => setZoom(+e.target.value));
+  tlScroll.addEventListener('wheel', e => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault(); setZoom(state.pxPerSec * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  }, { passive: false });
+}
+function setZoom(px) {
+  state.pxPerSec = clamp(px, 8, 240); $('#zoom').value = state.pxPerSec;
+  renderTimeline(); tlScroll.scrollLeft = state.time * state.pxPerSec - tlScroll.clientWidth / 2;
+}
+
+/* ===== プレビュー（Canvas）・再生エンジン ===== */
+const cv = $('#preview'), g = cv.getContext('2d');
+let needsDraw = true, lastTs = performance.now();
+let audioCtx = null, exportDest = null;
+const mediaEls = new Map();
+
+function dims() { const [a, b] = ASPECTS[state.aspect]; const q = state.quality; return a >= b ? [even(q * a / b), q] : [q, even(q * b / a)]; }
+function fitCanvas() {
+  const r = $('#stage').getBoundingClientRect(), pad = 28;
+  const s = Math.max(0.01, Math.min((r.width - pad) / cv.width, (r.height - pad) / cv.height));
+  cv.style.width = Math.floor(cv.width * s) + 'px'; cv.style.height = Math.floor(cv.height * s) + 'px';
+}
+function applyCanvasSize() {
+  const [w, h] = dims(); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  fitCanvas(); needsDraw = true; $('#stageTag').textContent = `${state.aspect}   ${w}×${h}`;
+}
+function setAspect(asp) {
+  if (!ASPECTS[asp]) return; state.aspect = asp; applyCanvasSize();
+  $$('[data-aspect]').forEach(b => b.classList.toggle('active', b.dataset.aspect === asp));
+  const inMore = !MAIN_ASPECTS.includes(asp);
+  $('#moreAspBtn').classList.toggle('active', inMore);
+  $('#moreAspLabel').textContent = inMore ? `${asp} ${ASPECTS[asp][2]}` : 'もっと…';
+  renderInfo();
+}
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    audioCtx = new AC(); exportDest = audioCtx.createMediaStreamDestination();
+    mediaEls.forEach(routeEl);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function routeEl(el) {
+  if (!audioCtx || el._gain) return;
+  try { const src = audioCtx.createMediaElementSource(el), gn = audioCtx.createGain(); src.connect(gn); gn.connect(audioCtx.destination); gn.connect(exportDest); el._gain = gn; el.volume = 1; }
+  catch (e) { console.warn(e); }
+}
+function setVol(el, v) { v = clamp(v, 0, 1); if (el._gain) el._gain.gain.value = v; else el.volume = v; }
+function mediaFor(clip, type) {
+  const a = assetById(clip.assetId); if (!a) return null;
+  let el = mediaEls.get(clip.id);
+  if (el && el._assetId === a.id) return el;
+  el = document.createElement(type); el.src = a.url; el.preload = 'auto'; el.playsInline = true; el._assetId = a.id;
+  el.addEventListener('seeked', () => { needsDraw = true; });
+  el.addEventListener('loadeddata', () => { needsDraw = true; });
+  $('#mediaPool').appendChild(el); routeEl(el); mediaEls.set(clip.id, el);
+  return el;
+}
+function gcMedia() {
+  const ids = new Set([...state.tracks.video, ...state.tracks.audio].map(c => c.id));
+  for (const [id, el] of mediaEls) if (!ids.has(id)) { el.pause(); el.removeAttribute('src'); el.load(); el.remove(); mediaEls.delete(id); }
+}
+const edge = (local, dur, f) => clamp(Math.min(local / f, (dur - local) / f), 0, 1);
+function frameTime() { const tot = totalDuration(); return state.playing ? state.time : Math.min(state.time, Math.max(0, tot - 0.001)); }
+
+function syncOne(el, active, target, vol, playing, prerollAt) {
+  if (active) {
+    setVol(el, vol);
+    if (playing) { if (!el.seeking && Math.abs(el.currentTime - target) > 0.3) el.currentTime = target; if (el.paused) el.play().catch(() => {}); }
+    else { if (!el.paused) el.pause(); if (!el.seeking && Math.abs(el.currentTime - target) > 0.02) el.currentTime = target; }
+  } else {
+    if (!el.paused) el.pause();
+    if (prerollAt != null && !el.seeking && Math.abs(el.currentTime - prerollAt) > 0.05) el.currentTime = prerollAt;
+  }
+}
+function syncMedia() {
+  const t = frameTime(), playing = state.playing;
+  for (const L of videoLayout()) {
+    const c = L.clip, a = assetById(c.assetId); if (!a || a.kind !== 'video') continue;
+    const el = mediaFor(c, 'video'); if (!el) continue;
+    const active = t >= L.start && t < L.end, local = t - L.start;
+    const vol = (c.volume ?? 1) * (c.fade ? edge(local, c.duration, 0.4) : 1);
+    syncOne(el, active, c.inPoint + local, vol, playing, L.start > t && L.start - t < 1.5 ? c.inPoint : null);
+  }
+  for (const c of state.tracks.audio) {
+    const el = mediaFor(c, 'audio'); if (!el) continue;
+    const local = t - c.start, active = local >= 0 && local < c.duration;
+    let vol = c.volume ?? 0.8;
+    if (active) { if (c.fadeIn) vol *= clamp(local / 1.0, 0, 1); if (c.fadeOut) vol *= clamp((c.duration - local) / 1.5, 0, 1); }
+    syncOne(el, active, c.inPoint + local, vol, playing, c.start > t && c.start - t < 1.5 ? c.inPoint : null);
+  }
+}
+
+function roundRectPath(x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function wrapText(text, maxW) {
+  const out = [];
+  String(text).split('\n').forEach(par => {
+    let line = '';
+    for (const ch of [...par]) { if (line && g.measureText(line + ch).width > maxW) { out.push(line); line = ch; } else line += ch; }
+    out.push(line);
+  });
+  return out;
+}
+function drawMedia(src, sw, sh, W, H, c, p) {
+  const fit = c.fit || 'cover';
+  const cover = Math.max(W / sw, H / sh), contain = Math.min(W / sw, H / sh);
+  let zoom = 1, dx = 0;
+  if (c.motion === 'zoomIn') zoom = 1 + 0.12 * p;
+  else if (c.motion === 'zoomOut') zoom = 1.12 - 0.12 * p;
+  else if (c.motion === 'pan') { zoom = 1.12; dx = (p - 0.5) * 0.1 * W; }
+  if (fit === 'contain') {
+    g.save(); g.filter = 'blur(28px) brightness(0.45)';
+    const bw = sw * cover * 1.1, bh = sh * cover * 1.1; g.drawImage(src, (W - bw) / 2, (H - bh) / 2, bw, bh); g.restore();
+  }
+  const s = (fit === 'contain' ? contain : cover) * zoom, dw = sw * s, dh = sh * s;
+  g.drawImage(src, (W - dw) / 2 + dx, (H - dh) / 2, dw, dh);
+}
+function drawCaption(cap, local, W, H) {
+  const base = Math.min(W, H), fs = Math.round(base * ({ S: 0.05, M: 0.065, L: 0.085 }[cap.size] || 0.065));
+  g.save(); g.globalAlpha = edge(local, cap.duration, 0.2);
+  g.font = `900 ${fs}px "Zen Kaku Gothic New", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const lines = wrapText(cap.text || '', W * 0.86), lh = fs * 1.32, total = lines.length * lh;
+  let y0 = cap.pos === 'top' ? H * 0.1 : cap.pos === 'center' ? (H - total) / 2 : (H > W ? H * 0.78 : H * 0.9) - total;
+  lines.forEach((ln, i) => {
+    if (!ln) return;
+    const y = y0 + lh * i + lh / 2, x = W / 2;
+    if (cap.style === 'band') {
+      const w = g.measureText(ln).width + fs * 0.9; g.fillStyle = 'rgba(0,0,0,.62)';
+      roundRectPath(x - w / 2, y - lh / 2, w, lh, fs * 0.2); g.fill(); g.fillStyle = '#fff'; g.fillText(ln, x, y);
+    } else {
+      const pop = cap.style === 'pop';
+      g.lineJoin = 'round'; g.lineWidth = fs * (pop ? 0.3 : 0.18); g.strokeStyle = pop ? '#1A1A1A' : 'rgba(0,0,0,.85)';
+      g.strokeText(ln, x, y); g.fillStyle = pop ? '#FFE14D' : '#FFFFFF'; g.fillText(ln, x, y);
+    }
+  });
+  g.restore();
+}
+function drawEmpty(W, H) {
+  const base = Math.min(W, H), m = base * 0.06;
+  g.fillStyle = '#0B0D10'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,255,255,.09)'; g.lineWidth = Math.max(2, base * 0.004);
+  g.setLineDash([base * 0.02, base * 0.015]); g.strokeRect(m, m, W - m * 2, H - m * 2); g.setLineDash([]);
+  g.fillStyle = '#6B7485'; g.font = `500 ${Math.round(base * 0.036)}px "Zen Kaku Gothic New", sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('素材をタイムラインに並べると、ここに映ります', W / 2, H / 2);
+}
+function draw() {
+  const W = cv.width, H = cv.height, t = frameTime();
+  g.globalAlpha = 1; g.filter = 'none';
+  if (!state.tracks.video.length && !state.tracks.text.length) { drawEmpty(W, H); return; }
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const L = videoLayout().find(l => t >= l.start && t < l.end);
+  if (L) {
+    const c = L.clip, a = assetById(c.assetId), local = t - L.start, p = c.duration ? clamp(local / c.duration, 0, 1) : 0;
+    let src = null, sw = 0, sh = 0;
+    if (a && a.kind === 'image' && a.img) { src = a.img; sw = a.w; sh = a.h; }
+    else if (a && a.kind === 'video') { const el = mediaEls.get(c.id); if (el && el.readyState >= 2) { src = el; sw = el.videoWidth; sh = el.videoHeight; } }
+    if (src && sw && sh) { g.save(); g.globalAlpha = c.fade ? edge(local, c.duration, 0.4) : 1; drawMedia(src, sw, sh, W, H, c, p); g.restore(); }
+  }
+  for (const cap of state.tracks.text) if (t >= cap.start && t < cap.start + cap.duration) drawCaption(cap, t - cap.start, W, H);
+}
+function loop(ts) {
+  const dt = (ts - lastTs) / 1000; lastTs = ts;
+  if (state.playing) {
+    state.time += Math.max(0, dt);
+    const total = totalDuration();
+    if (state.time >= total) { state.time = total; if (Exporter.active) Exporter.finish(); else pause(); }
+    needsDraw = true;
+  }
+  if (needsDraw) { needsDraw = false; syncMedia(); draw(); updatePlayhead(); }
+  requestAnimationFrame(loop);
+}
+function play() {
+  ensureAudio(); const total = totalDuration(); if (total <= 0) return toast('タイムラインが空です');
+  if (state.time >= total - 0.01) state.time = 0;
+  state.playing = true; needsDraw = true; updatePlayBtn();
+}
+function pause() { state.playing = false; mediaEls.forEach(el => el.pause()); needsDraw = true; updatePlayBtn(); }
+function togglePlay() { state.playing ? pause() : play(); }
+function updatePlayBtn() { $('#btnPlay').innerHTML = `<i data-lucide="${state.playing ? 'pause' : 'play'}"></i>`; icons(); }
+function captureThumb() {
+  const c = document.createElement('canvas'), s = 320 / Math.max(cv.width, cv.height);
+  c.width = Math.round(cv.width * s); c.height = Math.round(cv.height * s);
+  c.getContext('2d').drawImage(cv, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.75);
+}
+
+/* ===== 情報ペイン・インスペクター ===== */
+function renderSaved() { $('#infoSaved').textContent = state.project.id ? (state.dirty ? 'Drive（未保存の変更あり）' : 'Driveに保存済み') : '未保存'; }
+function renderInfo() {
+  const [w, h] = dims(), tot = totalDuration();
+  $('#infoAspect').textContent = `${state.aspect}（${ASPECTS[state.aspect][2]}）`;
+  $('#infoRes').textContent = `${w}×${h}`;
+  $('#selQuality').value = String(state.quality); $('#selFps').value = String(state.fps);
+  $('#infoDur').textContent = fmt(tot); $('#tcTotal').textContent = fmt(tot);
+  $('#infoClips').textContent = `映像${state.tracks.video.length}／テロップ${state.tracks.text.length}／音声${state.tracks.audio.length}`;
+  const img = $('#projThumb');
+  if (state.project.thumb) { img.src = state.project.thumb; img.hidden = false; $('#projThumbEmpty').hidden = true; }
+  else { img.hidden = true; $('#projThumbEmpty').hidden = false; }
+  renderSaved();
+}
+function renderInspector() {
+  const box = $('#inspector'), s = state.selected, c = s && findClip(s.track, s.id);
+  if (!c) { box.innerHTML = `<p class="insp-empty">タイムラインのクリップを選ぶと、ここで長さや動き、テロップの文字を調整できます。</p>`; return; }
+  const num = (p, v, min, max) => `<input class="inp tc" type="number" data-p="${p}" value="${(+v).toFixed(2)}" min="${min}"${max != null && isFinite(max) ? ` max="${(+max).toFixed(2)}"` : ''} step="0.1">`;
+  const sel = (p, v, opts) => `<select class="inp" data-p="${p}">${opts.map(([k, l]) => `<option value="${k}"${k === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+  const rng = (p, v) => `<input type="range" data-p="${p}" min="0" max="1" step="0.05" value="${v}">`;
+  const chk = (p, v, l) => `<label class="check"><input type="checkbox" data-p="${p}"${v ? ' checked' : ''}>${l}</label>`;
+  const fld = (l, h) => `<label class="field"><span>${l}</span>${h}</label>`;
+  let h = '';
+  if (s.track === 'video') {
+    const a = assetById(c.assetId), isV = a && a.kind === 'video';
+    h += `<p class="insp-name">${esc(a ? a.name : '素材が見つかりません')}</p>`;
+    h += fld('表示秒数', num('duration', c.duration, MIN_DUR, isV ? a.duration - c.inPoint : 60));
+    if (isV) { h += fld('素材のどこから使うか（秒）', num('inPoint', c.inPoint, 0, a.duration - MIN_DUR)); h += fld('音量', rng('volume', c.volume ?? 1)); }
+    h += fld('動き', sel('motion', c.motion || 'none', [['none', 'なし'], ['zoomIn', 'ゆっくりズームイン'], ['zoomOut', 'ゆっくりズームアウト'], ['pan', '横にパン']]));
+    h += fld('画面への収め方', sel('fit', c.fit || 'cover', [['cover', '画面いっぱい（はみ出しは切る）'], ['contain', '全体を表示（余白はぼかし）']]));
+    h += chk('fade', c.fade, 'フェードイン・アウト');
+  } else if (s.track === 'text') {
+    h += fld('テロップの文字', `<textarea class="inp" data-p="text" rows="3">${esc(c.text)}</textarea>`);
+    h += fld('位置', sel('pos', c.pos, [['bottom', '下'], ['center', '中央'], ['top', '上']]));
+    h += fld('大きさ', sel('size', c.size, [['S', '小'], ['M', '中'], ['L', '大']]));
+    h += fld('スタイル', sel('style', c.style, [['outline', '白文字＋縁取り'], ['pop', '黄色の太字'], ['band', '黒帯＋白文字']]));
+    h += `<div class="grid2">${fld('開始（秒）', num('start', c.start, 0))}${fld('表示秒数', num('duration', c.duration, MIN_DUR, 600))}</div>`;
+  } else {
+    const a = assetById(c.assetId);
+    h += `<p class="insp-name">${esc(a ? a.name : '素材が見つかりません')}</p>`;
+    h += fld('音量', rng('volume', c.volume ?? 0.8));
+    h += `<div class="grid2">${fld('開始（秒）', num('start', c.start, 0))}${fld('長さ（秒）', num('duration', c.duration, MIN_DUR, a ? a.duration - c.inPoint : null))}</div>`;
+    if (a) h += fld('素材のどこから使うか（秒）', num('inPoint', c.inPoint, 0, a.duration - MIN_DUR));
+    h += chk('fadeIn', c.fadeIn, 'フェードイン') + chk('fadeOut', c.fadeOut, 'フェードアウト');
+  }
+  h += `<button type="button" class="btn-danger" id="inspDelete"><i data-lucide="trash-2"></i>このクリップを削除</button>`;
+  box.innerHTML = h; icons();
+}
+let inspSnap = null;
+function applyInsp(el, commit) {
+  const p = el.dataset.p; if (!p) return;
+  const s = state.selected, c = s && findClip(s.track, s.id); if (!c) return;
+  if (inspSnap == null) inspSnap = snapshot();
+  let v = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.type === 'range') ? parseFloat(el.value) : el.value;
+  if (typeof v === 'number' && !isFinite(v)) return;
+  const a = c.assetId ? assetById(c.assetId) : null, src = a && a.kind !== 'image' ? a.duration : Infinity;
+  if (p === 'duration') v = clamp(v, MIN_DUR, Math.min(s.track === 'text' ? 600 : (a && a.kind === 'image' ? 60 : Infinity), src - (c.inPoint || 0)));
+  if (p === 'inPoint') { v = clamp(v, 0, src - MIN_DUR); c.duration = Math.min(c.duration, src - v); }
+  if (p === 'start') v = Math.max(0, v);
+  c[p] = v;
+  if (commit) {
+    if (inspSnap && inspSnap !== snapshot()) { commitHistory(inspSnap); markDirty(); }
+    inspSnap = snapshot();
+    if (el.type === 'number') el.value = (+c[p]).toFixed(2);
+  }
+  scheduleRender(); needsDraw = true; if (s.track === 'text') renderTextList();
+}
+
+/* ===== AI自動編集（Gemini） ===== */
+async function runGemini() {
+  const theme = $('#aiTheme').value.trim();
+  if (!theme) { $('#aiTheme').focus(); return toast('作りたい動画のテーマを入力してください', 'error'); }
+  const visual = state.assets.filter(a => a.kind !== 'audio');
+  if (!visual.length) return toast('先に動画か画像の素材を追加してください', 'error');
+  if (state.tracks.video.length && !confirm('今のタイムライン（映像・テロップ・BGM）を、AIの構成で置き換えます。\n元に戻すには Ctrl+Z を押してください。')) return;
+  const preset = CAPTION_PRESETS[state.ai.cap], useBgm = $('#aiBgm').checked;
+  const assets = [...visual.slice(0, 26), ...state.assets.filter(a => a.kind === 'audio').slice(0, 4)]
+    .map(a => ({ id: a.id, name: a.name, kind: a.kind, duration: +a.duration.toFixed(2), thumb: a.kind !== 'audio' ? a.thumb : null }));
+  const btn = $('#btnAi'); btn.disabled = true;
+  $('#aiResult').innerHTML = `<div class="ai-wait"><i data-lucide="loader-circle" class="spin"></i>Geminiが素材を見て構成を考えています…</div>`; icons();
+  try {
+    const r = await api('geminiEdit', { theme, tempo: state.ai.tempo, targetDuration: +state.ai.len, captions: state.ai.cap !== 'none', captionTone: preset.tone, aspect: state.aspect, useBgm, assets });
+    applyPlan(r.plan, preset, useBgm);
+    renderPlan(r.plan);
+    toast('AIの構成をタイムラインに並べました', 'ok');
+  } catch (e) {
+    $('#aiResult').innerHTML = `<p class="auth-error">${esc(e.message)}</p>`;
+  } finally { btn.disabled = false; }
+}
+function applyPlan(plan, preset, useBgm) {
+  const scenes = (plan.scenes || []).map(s => ({ s, a: assetById(s.assetId) })).filter(x => x.a && x.a.kind !== 'audio');
+  if (!scenes.length) throw new Error('AIの構成案に使える素材が含まれていませんでした。テーマを具体的にして、もう一度お試しください');
+  let bgm = null;
+  if (useBgm) { const b = assetById(plan.bgmAssetId); bgm = b && b.kind === 'audio' ? b : state.assets.find(a => a.kind === 'audio') || null; }
+  mutate(() => {
+    const video = [], text = [], audio = []; let t = 0;
+    for (const { s, a } of scenes) {
+      const isV = a.kind === 'video';
+      const inPoint = isV ? clamp(+s.inPoint || 0, 0, Math.max(0, a.duration - 0.5)) : 0;
+      const dur = clamp(+s.duration || 3, 0.5, isV ? Math.max(0.5, a.duration - inPoint) : 20);
+      const motion = ['none', 'zoomIn', 'zoomOut', 'pan'].includes(s.motion) ? s.motion : (isV ? 'none' : 'zoomIn');
+      video.push({ id: uid(), assetId: a.id, inPoint, duration: dur, motion, fade: s.transition === 'fade', fit: 'cover', volume: isV ? (bgm ? 0.5 : 1) : 1 });
+      const cap = String(s.caption || '').trim();
+      if (preset.style && cap) text.push({ id: uid(), start: t + 0.15, duration: Math.max(0.6, dur - 0.3), text: cap, pos: 'bottom', size: 'M', style: preset.style });
+      t += dur;
+    }
+    if (bgm && bgm.duration > 0.5) {
+      const vol = clamp(+plan.bgmVolume || 0.5, 0.1, 1); let at = 0;
+      while (at < t - 0.3) { const d = Math.min(bgm.duration, t - at); audio.push({ id: uid(), assetId: bgm.id, start: at, inPoint: 0, duration: d, volume: vol, fadeIn: at === 0, fadeOut: at + d >= t - 0.01 }); at += d; }
+    }
+    state.tracks = { video, text, audio }; state.selected = null;
+  });
+  if (plan.title && state.project.name === DEFAULT_NAME) { state.project.name = String(plan.title).slice(0, 60); $('#projName').value = state.project.name; }
+  seek(0);
+}
+function renderPlan(plan) {
+  const rows = (plan.scenes || []).filter(s => { const a = assetById(s.assetId); return a && a.kind !== 'audio'; }).map(s => {
+    const a = assetById(s.assetId);
+    return `<li><span><span class="cap">${esc(s.caption || '（テロップなし）')}</span><span class="src">${esc(a.name)}</span></span><span class="sec">${(+s.duration || 0).toFixed(1)}s</span></li>`;
+  }).join('');
+  $('#aiResult').innerHTML = `<div class="plan"><h3>${esc(plan.title || '構成案')}</h3>${plan.summary ? `<p class="hint">${esc(plan.summary)}</p>` : ''}<ol>${rows}</ol><p class="hint" style="margin-top:10px">タイムラインに並べました。気になるところはクリップを選んで調整できます。</p></div>`;
+}
+
+/* ===== プロジェクト保存・読み込み ===== */
+function resetProject() {
+  pause();
+  state.assets.forEach(a => URL.revokeObjectURL(a.url));
+  state.assets = []; state.tracks = { video: [], text: [], audio: [] };
+  state.selected = null; state.history = []; state.future = []; state.time = 0; state.dirty = false;
+  state.project = { id: null, name: DEFAULT_NAME, thumb: null };
+  $('#projName').value = state.project.name; $('#aiResult').innerHTML = '';
+  renderMedia(); afterChange();
+}
+function serializeProject() {
+  return {
+    version: 1, app: 'ai-douga-henshu', name: state.project.name, aspect: state.aspect, quality: state.quality, fps: state.fps, thumb: state.project.thumb,
+    assets: state.assets.map(a => ({ id: a.id, name: a.name, kind: a.kind, mime: a.mime, duration: a.duration, size: a.size, driveFileId: a.driveFileId })),
+    tracks: state.tracks,
+    exportSettings: { resolution: dims().join('x'), fps: state.fps, quality: state.quality, format: Exporter.pickMime() || 'video/webm' },
+    savedAt: new Date().toISOString()
+  };
+}
+async function saveProject() {
+  if (!hasContent()) return toast('保存する内容がありません。先に素材を追加してください', 'error');
+  const limit = CONFIG.MAX_UPLOAD_MB * 1048576;
+  const need = state.assets.filter(a => !a.driveFileId && a.size <= limit);
+  const skipped = state.assets.filter(a => !a.driveFileId && a.size > limit).map(a => a.name);
+  try {
+    for (let i = 0; i < need.length; i++) { busy(true, `素材をDriveに保存中… (${i + 1}/${need.length})`); await uploadToDrive(need[i], true); }
+    busy(true, 'プロジェクトを保存中…');
+    if (!state.project.thumb && totalDuration() > 0) state.project.thumb = captureThumb();
+    const r = await api('saveProject', { projectId: state.project.id, name: state.project.name, aspect: state.aspect, duration: +totalDuration().toFixed(2), thumb: state.project.thumb || '', data: serializeProject() });
+    state.project.id = r.projectId; state.dirty = false; renderInfo();
+    if (skipped.length) toast(`保存しました。ただし ${skipped.join('、')} は${CONFIG.MAX_UPLOAD_MB}MBを超えるためDriveに入っていません（次に開いたとき読み込めません）`, 'info', 9000);
+    else toast('Driveに保存しました', 'ok');
+  } catch (e) { toast(e.message, 'error', 7000); } finally { busy(false); }
+}
+async function openProjectsModal() {
+  closeMenus(); $('#projModal').classList.remove('is-hidden');
+  const box = $('#projList');
+  box.innerHTML = `<div class="empty"><i data-lucide="loader-circle" class="spin"></i><br>読み込み中…</div>`; icons();
+  try {
+    const r = await api('listProjects');
+    box.innerHTML = r.projects.length ? r.projects.map(p => `
+      <div class="proj-card">
+        <div class="proj-thumb">${p.thumb ? `<img src="${p.thumb}" alt="">` : ''}</div>
+        <div class="proj-body"><strong title="${esc(p.name)}">${esc(p.name)}</strong>
+          <span class="meta">${esc(p.aspect)}　${fmt(p.duration, false)}　${fmtDate(p.updatedAt)}</span>
+          <div class="proj-actions"><button class="btn-small" data-open="${esc(p.projectId)}"><i data-lucide="folder-open"></i>開く</button><button class="icon-btn" data-del="${esc(p.projectId)}" title="削除（ゴミ箱へ）"><i data-lucide="trash-2"></i></button></div>
+        </div>
+      </div>`).join('')
+      : `<div class="empty">保存したプロジェクトはまだありません。<br>編集してから「保存」を押すと、ここに並びます。</div>`;
+    icons();
+  } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function openProject(pid) {
+  if (state.dirty && hasContent() && !confirm('保存していない変更は失われます。プロジェクトを開きますか？')) return;
+  $('#projModal').classList.add('is-hidden');
+  busy(true, 'プロジェクトを開いています…');
+  try {
+    const d = (await api('loadProject', { projectId: pid })).data;
+    resetProject();
+    state.quality = d.quality || 1080; state.fps = d.fps || 30; setAspect(d.aspect || '16:9');
+    const missing = [], list = d.assets || [];
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i]; busy(true, `素材を読み込み中… (${i + 1}/${list.length})`);
+      if (!s.driveFileId) { missing.push(s.name); continue; }
+      try { const r = await api('getAsset', { fileId: s.driveFileId }); const blob = await b64ToBlob(r.base64, r.mimeType || s.mime); await createAsset(blob, s.name, { id: s.id, kind: s.kind, driveFileId: s.driveFileId }); }
+      catch (e) { missing.push(s.name); }
+    }
+    const t = d.tracks || {};
+    state.tracks = {
+      video: (t.video || []).filter(c => assetById(c.assetId)),
+      text: t.text || [],
+      audio: (t.audio || []).filter(c => assetById(c.assetId))
+    };
+    state.project = { id: pid, name: d.name || DEFAULT_NAME, thumb: d.thumb || null };
+    $('#projName').value = state.project.name; state.dirty = false;
+    renderMedia(); afterChange(); state.history = []; state.future = []; updateHistoryBtns();
+    if (missing.length) toast(`次の素材は読み込めませんでした：${missing.join('、')}`, 'error', 9000);
+    else toast('プロジェクトを開きました', 'ok');
+  } catch (e) { toast(e.message, 'error', 7000); } finally { busy(false); }
+}
+async function deleteProject(pid) {
+  if (!confirm('このプロジェクトをDriveのゴミ箱に移動します。よろしいですか？（素材ファイルは残ります）')) return;
+  try { await api('deleteProject', { projectId: pid }); if (state.project.id === pid) { state.project.id = null; renderSaved(); } openProjectsModal(); toast('プロジェクトを削除しました', 'ok'); }
+  catch (e) { toast(e.message, 'error'); }
+}
+
+/* ===== 書き出し（MediaRecorder） ===== */
+const Exporter = {
+  active: false, cancelled: false, rec: null, chunks: [], mime: '', blob: null, url: null,
+  pickMime() {
+    if (!window.MediaRecorder) return '';
+    return ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+  },
+  show(view) { $('#expModal').classList.remove('is-hidden'); $$('#expModal [data-exp]').forEach(v => v.classList.toggle('is-hidden', v.dataset.exp !== view)); icons(); },
+  openSetup() {
+    if (totalDuration() <= 0) return toast('タイムラインが空です。素材を並べてから書き出してください', 'error');
+    if (!window.MediaRecorder || !cv.captureStream) return toast('このブラウザは書き出しに対応していません。パソコン版のChromeかEdgeをお使いください', 'error', 7000);
+    const [w, h] = dims(), m = this.pickMime();
+    $('#expSetupInfo').innerHTML = `<dt>画面比率</dt><dd>${state.aspect}</dd><dt>解像度</dt><dd class="tc">${w}×${h}</dd><dt>フレームレート</dt><dd>${state.fps}fps</dd><dt>長さ</dt><dd class="tc">${fmt(totalDuration())}</dd><dt>形式</dt><dd>${m.startsWith('video/mp4') ? 'MP4' : 'WebM'}</dd>`;
+    this.show('setup');
+  },
+  async start() {
+    ensureAudio(); pause(); seek(0); this.show('progress'); this.progress();
+    await sleep(600);
+    this.mime = this.pickMime();
+    const vs = cv.captureStream(state.fps);
+    const tracks = [...vs.getVideoTracks(), ...(exportDest ? exportDest.stream.getAudioTracks() : [])];
+    const opts = { videoBitsPerSecond: state.quality >= 1080 ? 8000000 : 5000000, audioBitsPerSecond: 160000 };
+    if (this.mime) opts.mimeType = this.mime;
+    try { this.rec = new MediaRecorder(new MediaStream(tracks), opts); }
+    catch (e) { $('#expModal').classList.add('is-hidden'); return toast('書き出しを開始できませんでした：' + e.message, 'error', 7000); }
+    this.chunks = []; this.cancelled = false;
+    this.rec.ondataavailable = e => { if (e.data && e.data.size) this.chunks.push(e.data); };
+    this.rec.onstop = () => { vs.getTracks().forEach(t => t.stop()); this.done(); };
+    this.active = true; this.rec.start(250); play();
+  },
+  progress() {
+    const total = totalDuration() || 1, p = clamp(state.time / total, 0, 1);
+    $('#expBar').style.width = (p * 100).toFixed(1) + '%';
+    $('#expTime').textContent = `${fmt(state.time, false)} / ${fmt(total, false)}`;
+  },
+  finish() { this.active = false; pause(); if (this.rec && this.rec.state === 'recording') this.rec.stop(); },
+  cancel() { this.cancelled = true; this.finish(); },
+  done() {
+    if (this.cancelled) { $('#expModal').classList.add('is-hidden'); return toast('書き出しを中止しました'); }
+    const type = (this.mime || 'video/webm').split(';')[0], ext = type === 'video/mp4' ? 'mp4' : 'webm';
+    this.blob = new Blob(this.chunks, { type });
+    if (this.url) URL.revokeObjectURL(this.url);
+    this.url = URL.createObjectURL(this.blob);
+    const fname = `${(state.project.name || 'video').replace(/[\\/:*?"<>|]/g, '_')}_${state.aspect.replace(':', 'x')}.${ext}`;
+    this.fname = fname;
+    $('#expVideo').src = this.url;
+    $('#expDownload').href = this.url; $('#expDownload').download = fname;
+    $('#expMeta').textContent = `${fname}（${fmtMB(this.blob.size)}）`;
+    $('#expDrive').disabled = false;
+    this.show('result');
+  },
+  async saveToDrive() {
+    if (!this.blob) return;
+    const btn = $('#expDrive'); btn.disabled = true;
+    try {
+      busy(true, '書き出した動画をDriveに保存中…');
+      await uploadToDrive({ name: this.fname, kind: 'video', mime: this.blob.type, blob: this.blob, size: this.blob.size, duration: totalDuration(), thumb: state.project.thumb || captureThumb() }, true);
+      toast('書き出した動画をDriveに保存しました', 'ok');
+    } catch (e) { toast(e.message, 'error', 7000); btn.disabled = false; } finally { busy(false); }
+  }
+};
+
+/* ===== UIイベント ===== */
+function closeMenus() { $$('.menu').forEach(m => m.classList.add('is-hidden')); $$('[aria-expanded]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+function toggleMenu(btn, menu) { const open = menu.classList.contains('is-hidden'); closeMenus(); if (open) { menu.classList.remove('is-hidden'); btn.setAttribute('aria-expanded', 'true'); } }
+
+function bindUI() {
+  bindAuth(); bindTimeline();
+  // ヘッダー
+  $('#moreAspBtn').addEventListener('click', e => { e.stopPropagation(); toggleMenu(e.currentTarget, $('#moreAspMenu')); });
+  $('#userBtn').addEventListener('click', e => { e.stopPropagation(); toggleMenu(e.currentTarget, $('#userMenu')); });
+  document.addEventListener('click', e => { if (!e.target.closest('.more-wrap')) closeMenus(); });
+  $$('[data-aspect]').forEach(b => b.addEventListener('click', () => { if (state.aspect !== b.dataset.aspect) { setAspect(b.dataset.aspect); markDirty(); } closeMenus(); }));
+  $('#projName').addEventListener('input', e => { state.project.name = e.target.value.trim() || DEFAULT_NAME; markDirty(); });
+  $('#btnNew').addEventListener('click', () => { if (state.dirty && hasContent() && !confirm('保存していない変更は失われます。新しいプロジェクトを始めますか？')) return; resetProject(); });
+  $('#btnOpen').addEventListener('click', openProjectsModal);
+  $('#btnSave').addEventListener('click', saveProject);
+  $('#btnExport').addEventListener('click', () => Exporter.openSetup());
+
+  // 左ペイン
+  $$('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+  $('#fileInput').addEventListener('change', e => { handleFiles(e.target.files); e.target.value = ''; });
+  const dz = $('#dropzone');
+  dz.addEventListener('dragover', () => dz.classList.add('over'));
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', () => dz.classList.remove('over'));
+  window.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+  window.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); handleFiles(e.dataTransfer.files); } });
+  $('#mediaFilter').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; state.mediaFilter = c.dataset.f; $$('#mediaFilter .chip').forEach(x => x.classList.toggle('active', x === c)); renderMedia(); });
+  const grid = $('#mediaGrid');
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'), card = e.target.closest('.media-card'); if (!b || !card) return;
+    const a = assetById(card.dataset.id); if (!a) return;
+    if (b.dataset.act === 'add') addToTimeline(a);
+    else if (b.dataset.act === 'remove') removeAsset(a.id);
+    else if (b.dataset.act === 'upload') { b.disabled = true; uploadToDrive(a).catch(err => { toast(err.message, 'error', 7000); b.disabled = false; }); }
+  });
+  grid.addEventListener('dblclick', e => { const card = e.target.closest('.media-card'); const a = card && assetById(card.dataset.id); if (a && !e.target.closest('[data-act]')) addToTimeline(a); });
+  grid.addEventListener('dragstart', e => { const card = e.target.closest('.media-card'); if (!card) return; e.dataTransfer.setData('text/plain', card.dataset.id); e.dataTransfer.effectAllowed = 'copy'; });
+  $('#driveList').addEventListener('click', e => { const b = e.target.closest('[data-act]'), card = e.target.closest('.media-card'); if (!b || !card) return; if (b.dataset.act === 'import') importFromDrive(card.dataset.fid); else if (b.dataset.act === 'trash') trashDriveAsset(card.dataset.fid); });
+  $('#btnDriveRefresh').addEventListener('click', loadDriveList);
+  $$('[data-seg]').forEach(seg => seg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.ai[seg.dataset.seg] = b.dataset.v; $$('button', seg).forEach(x => x.classList.toggle('active', x === b)); }));
+  $('#btnAi').addEventListener('click', runGemini);
+  $('#btnAddText').addEventListener('click', addCaption);
+  $('#textList').addEventListener('click', e => { const it = e.target.closest('.text-item'); if (!it) return; const c = findClip('text', it.dataset.id); if (c) { select('text', c.id); seek(c.start + 0.01); } });
+
+  // 情報ペイン
+  $('#btnSetThumb').addEventListener('click', () => { if (totalDuration() <= 0) return toast('タイムラインが空です'); state.project.thumb = captureThumb(); markDirty(); renderInfo(); toast('サムネイルを設定しました', 'ok'); });
+  $('#selQuality').addEventListener('change', e => { state.quality = +e.target.value; applyCanvasSize(); renderInfo(); markDirty(); });
+  $('#selFps').addEventListener('change', e => { state.fps = +e.target.value; markDirty(); });
+  const insp = $('#inspector');
+  insp.addEventListener('focusin', () => { inspSnap = snapshot(); });
+  insp.addEventListener('input', e => applyInsp(e.target, false));
+  insp.addEventListener('change', e => applyInsp(e.target, true));
+  insp.addEventListener('click', e => { if (e.target.closest('#inspDelete')) deleteSelected(); });
+
+  // タイムラインのツールバー
+  $('#btnPlay').addEventListener('click', togglePlay);
+  $('#btnHome').addEventListener('click', () => seek(0));
+  $('#btnPrev').addEventListener('click', () => seek(state.time - 1 / state.fps));
+  $('#btnNext').addEventListener('click', () => seek(state.time + 1 / state.fps));
+  $('#btnUndo').addEventListener('click', undo);
+  $('#btnRedo').addEventListener('click', redo);
+  $('#btnSplit').addEventListener('click', splitAtPlayhead);
+  $('#btnDelete').addEventListener('click', deleteSelected);
+  $('#btnAddText2').addEventListener('click', addCaption);
+
+  // モーダル
+  $$('.modal-back').forEach(m => m.addEventListener('click', e => { if (e.target.closest('[data-close]') && !Exporter.active) m.classList.add('is-hidden'); }));
+  $('#projList').addEventListener('click', e => { const o = e.target.closest('[data-open]'), d = e.target.closest('[data-del]'); if (o) openProject(o.dataset.open); else if (d) deleteProject(d.dataset.del); });
+  $('#expStart').addEventListener('click', () => Exporter.start());
+  $('#expCancel').addEventListener('click', () => Exporter.cancel());
+  $('#expDrive').addEventListener('click', () => Exporter.saveToDrive());
+
+  // キーボード
+  document.addEventListener('keydown', e => {
+    if (!$('#authModal').classList.contains('is-hidden') || Exporter.active) return;
+    const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    if (mod && k === 's') { e.preventDefault(); saveProject(); return; }
+    if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+    if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    else if (mod && k === 'y') { e.preventDefault(); redo(); }
+    else if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
+    else if (k === 's' && !mod) splitAtPlayhead();
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); seek(state.time - (e.shiftKey ? 1 : 1 / state.fps)); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); seek(state.time + (e.shiftKey ? 1 : 1 / state.fps)); }
+    else if (e.key === 'Home') seek(0);
+    else if (e.key === 'End') seek(totalDuration());
+    else if (e.key === 'Escape') { closeMenus(); select(null); }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && Exporter.active) toast('書き出し中です。このタブに戻ってください', 'error', 8000); });
+  window.addEventListener('beforeunload', e => { if (state.dirty && hasContent()) { e.preventDefault(); e.returnValue = ''; } });
+  new ResizeObserver(() => { fitCanvas(); scheduleRender(); }).observe($('#stage'));
+}
+
+/* ===== 起動 ===== */
+async function boot() {
+  bindUI(); Auth.load(); updateUserUI();
+  setAspect('16:9'); renderMedia(); renderTimeline(); renderInspector(); renderTextList(); updateHistoryBtns(); icons();
+  requestAnimationFrame(ts => { lastTs = ts; loop(ts); });
+  if (document.fonts) document.fonts.load('900 40px "Zen Kaku Gothic New"').then(() => { needsDraw = true; }).catch(() => {});
+  if (!Auth.token) return showAuth('login');
+  try {
+    const r = await api('me'); Auth.email = r.email; Auth.mustChange = !!r.mustChange; Auth.save(); updateUserUI();
+    if (Auth.mustChange) showAuth('change'); else hideAuth();
+  } catch (e) {
+    if (e.code !== 'SESSION_EXPIRED' && e.code !== 'MUST_CHANGE') { toast(e.message, 'error', 7000); showAuth('login'); }
+  }
+}
+boot();
+</script>
+</body>
+</html>
